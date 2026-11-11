@@ -3,6 +3,7 @@ import { Script } from 'node:vm';
 import assert from 'node:assert/strict';
 
 const html = readFileSync(new URL('../pixel-orbit.html', import.meta.url), 'utf8');
+const planetHtml = readFileSync(new URL('../pixel-orbit-planet.html', import.meta.url), 'utf8');
 const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map((match) => match[1]);
 assert.ok(scripts.length >= 3, 'expected renderer, interaction and page-controller scripts');
 scripts.forEach((source, index) => new Script(source, { filename: `inline-script-${index + 1}.js` }));
@@ -46,12 +47,32 @@ for (const key of ['themeDefault', 'themeCoast', 'themeLavender', 'themeAmber', 
 }
 assert.ok(html.includes("document.title=tr().pageTitle"), 'document title must follow the selected interface language');
 
+// The alternate planet edition must remain a real, independently renderable page.
+const planetScripts = [...planetHtml.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map((match) => match[1]);
+assert.ok(planetScripts.length >= 3, 'planet edition should contain renderer, interaction and page-controller scripts');
+planetScripts.forEach((source, index) => new Script(source, { filename: `planet-inline-script-${index + 1}.js` }));
+const planetSandbox = { window: {}, module: { exports: {} } };
+new Script(planetScripts[0], { filename: 'pixel-orbit-planet-renderer.js' }).runInNewContext(planetSandbox);
+const planetApi = planetSandbox.module.exports;
+assert.equal(planetApi.size, 152, 'planet renderer canvas should remain 152 pixels wide');
+const planetRenderer = planetApi.createRenderer();
+for (const hour of [0, 6, 12, 18, 23]) {
+  const pixels = planetRenderer.render(hour, 0, { calm: true });
+  assert.equal(pixels.length, 152 * 152, `unexpected planet pixel buffer size at ${hour}:00`);
+  assert.ok(Array.from(pixels).some((pixel) => pixel !== 0), `planet scene should not be blank at ${hour}:00`);
+  assert.ok(new Set(pixels).size > 10, `planet scene should contain a useful palette at ${hour}:00`);
+}
+assert.ok(planetHtml.includes("e.type !== 'pointercancel'"), 'planet edition pointer cancellation must not toggle the scene');
+assert.ok(planetHtml.includes('Number.isFinite(seconds) && seconds > 0'), 'planet autoplay API must reject invalid durations');
+assert.ok(planetHtml.includes('if (el.__pixelOrbit === api) delete el.__pixelOrbit'), 'planet destroy must release the mount marker');
+
 const rootEntry = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 assert.ok(rootEntry.includes('url=./pixel-orbit.html'), 'root entry must provide a no-JavaScript fallback redirect');
 assert.ok(rootEntry.includes("window.location.replace(new URL('./pixel-orbit.html'"), 'root entry must navigate to the main experience');
 
 const lab = readFileSync(new URL('../lab.html', import.meta.url), 'utf8');
-assert.ok(lab.includes('iframe src="./pixel-orbit.html"'), 'lab must embed the live experience');
+assert.ok(lab.includes('iframe src="./pixel-orbit.html"'), 'lab must embed the main live experience');
+assert.ok(lab.includes('pixel-orbit-planet.html'), 'lab must link to the alternate planet edition');
 assert.ok(lab.includes('title="Pixel Orbit interactive playground"'), 'lab iframe must have an accessible title');
 assert.ok(lab.includes('loading="lazy"'), 'lab preview should defer loading until needed');
 for (const apiMethod of ['setHour(18)', 'setAutoplay(48)', 'getHour()', 'isNight()', 'refreshColors()', 'destroy()']) {
@@ -64,6 +85,7 @@ for (const relativePath of ['./pixel-orbit.html', './lab.html', './docs/DEVELOPM
   assert.ok(readme.includes(relativePath), `README navigation is missing: ${relativePath}`);
 }
 assert.ok(readme.includes('node tests/smoke.mjs'), 'README must document the executable local quality check');
+assert.ok(readme.includes('https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html'), 'README must link to the alternate visual edition on GitHub Pages');
 
 console.log(`Pixel Orbit smoke checks passed (${scripts.length} inline scripts parsed; renderer, controls, lifecycle, entry point, lab and README verified).`);
 
