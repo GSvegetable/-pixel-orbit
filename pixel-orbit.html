@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Orbit · 像素圆环开关</title>
+<style>
+  /* ---------- 页面：背景和文字随 --night（0 白天 → 1 夜晚）渐变 ---------- */
+  :root { --night: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100svh; display: grid; place-items: center;
+    font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: #f2e8d2; color: #1b2146;
+    background: color-mix(in oklab, #f2e8d2 calc((1 - var(--night)) * 100%), #0c1030);
+    color: color-mix(in oklab, #1b2146 calc((1 - var(--night)) * 100%), #f5ecd9);
+  }
+  main { display: grid; gap: 1.5rem; justify-items: center; padding: 2rem 1rem; text-align: center; }
+  h1 { margin: 0; font-size: 1rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+  .hint { margin: 0; opacity: .65; font-size: .8rem; }
+  output { font-size: 1.4rem; letter-spacing: .12em; font-variant-numeric: tabular-nums; min-height: 1.6em; }
+  .row { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
+  button {
+    font: inherit; color: inherit; background: transparent; cursor: pointer; padding: .45rem .9rem;
+    border: 2px solid currentColor; border-radius: 0; box-shadow: 3px 3px 0 currentColor; transition: transform .08s, box-shadow .08s;
+  }
+  button:hover { transform: translate(1px, 1px); box-shadow: 2px 2px 0 currentColor; }
+  button:active { transform: translate(3px, 3px); box-shadow: 0 0 0 currentColor; }
+  button:focus-visible { outline: 3px solid #efa02c; outline-offset: 3px; }
+  button[aria-pressed="true"] { transform: translate(3px, 3px); box-shadow: inset 0 0 0 2px currentColor; }
+
+  /* ---------- 组件：.pixel-orbit ---------- */
+  .pixel-orbit {
+    /* 想换配色只改这 5 个变量，画面里所有颜色都由它们推导出来 */
+    --orbit-bg: #f5ecd9; --orbit-surface: #8c9a62; --orbit-fg: #1b2146; --orbit-muted: #7f97b3; --orbit-accent: #efa02c;
+    --orbit-size: min(84vw, 460px);
+    width: var(--orbit-size); aspect-ratio: 1; display: grid; place-items: center;
+    border-radius: 50%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .pixel-orbit:active { cursor: grabbing; }
+  .pixel-orbit:focus-visible { outline: 3px solid var(--orbit-accent); outline-offset: 8px; }
+  .pixel-orbit canvas { display: block; image-rendering: pixelated; pointer-events: none; filter: drop-shadow(0 .9rem 1.4rem rgb(0 0 0 / .3)); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Pixel Orbit</h1>
+  <!-- data-hour: "now"（本地时间）或 0–24；data-sync="root" 会把 --night 写到 <html>，让整个页面跟着变；data-autoplay="60" 表示 60 秒转一天 -->
+  <div class="pixel-orbit" data-pixel-orbit data-hour="now" data-sync="root" aria-label="昼夜圆环开关"></div>
+  <output id="clock" aria-live="off"></output>
+  <div class="row">
+    <button type="button" id="btn-day"><span>☀ 白天</span></button>
+    <button type="button" id="btn-night"><span>☾ 夜晚</span></button>
+    <button type="button" id="btn-auto" aria-pressed="false"><span>⟳ 自动</span></button>
+  </div>
+  <p class="hint">拖动圆环调整时间 · 点一下画面切换昼夜 · 键盘 ← → 微调，空格切换</p>
+  <noscript><p>需要 JavaScript 才能显示像素画面。</p></noscript>
+</main>
+
+<script>
+/* ============================================================
+ *  Pixel Orbit —— 像素轨道开关
+ *  圆形窗口里是一座田园小屋，窗口外的表盘圆环上有一枚旋钮（白天是太阳、夜里是月亮）。
+ *  拖动圆环调整时间；点一下画面（或旋钮）在白天 / 夜晚之间切换。
+ *  纯 JS，无依赖。调色只读取 5 个 CSS 变量，所有颜色都来自这 5 组 4 阶色带。
+ * ============================================================ */
+(() => {
+  'use strict';
+  const N = 152, CX = 76, CY = 76;            // 画布 152×152 像素，圆心 (76,76)
+  const TAU = Math.PI * 2;
+  const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
+  const mix = (a, b, t) => a + (b - a) * t;
+  const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const bay = (x, y) => (BAYER[(y & 3) * 4 + (x & 3)] + 0.5) / 16;   // 4×4 有序抖动阈值 0..1
+  const hash = (a, b, c = 0) => { let t = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263) ^ Math.imul(c | 0, 1274126177); t = Math.imul(t ^ (t >>> 13), 1274126177); return ((t ^ (t >>> 16)) >>> 0) / 4294967296; };
+
+  // ---------- 调色：5 个基色各生成 4 阶明度（OKLab），共 20 色 ----------
+  const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const gam = (v) => { v = clamp(v); return 255 * (v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055); };
+  const toLab = ([r, g, b]) => { const lr = lin(r), lg = lin(g), lb = lin(b); const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb), m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb), s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb); return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s]; };
+  const fromLab = (L, a, b) => { const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3, m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3, s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3; return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s]; };
+  const tone = (rgb, L) => { const [, a, b] = toLab(rgb); let c = Math.hypot(a, b); const h = Math.atan2(b, a); for (let i = 0; i < 24; i++) { const o = fromLab(L, c * Math.cos(h), c * Math.sin(h)); if (o.every((v) => v > -0.002 && v < 1.002)) return o.map(gam); c *= 0.9; } return fromLab(L, 0, 0).map(gam); };
+  const STEPS = [[0.76, 0.85, 0.93, 0.985], [0.4, 0.52, 0.64, 0.76], [0.17, 0.25, 0.33, 0.44], [0.5, 0.62, 0.74, 0.86], [0.5, 0.66, 0.8, 0.92]];
+  const DEFAULTS = { bg: [245, 236, 217], surface: [140, 154, 98], fg: [27, 33, 70], muted: [127, 151, 179], accent: [239, 160, 44] };
+  // 色带编号：C 奶油(bg) · G 草绿(surface) · I 深靛(fg) · U 雾蓝(muted) · A 琥珀(accent)，每组 +0..+3 由暗到亮
+  const C = 0, G = 4, I = 8, U = 12, A = 16;
+  const buildPalette = (colors = {}) => {
+    const src = { ...DEFAULTS, ...colors }; const out = new Uint32Array(20);
+    [src.bg, src.surface, src.fg, src.muted, src.accent].forEach((rgb, r) => STEPS[r].forEach((L, s) => { const [R, Gc, B] = tone(rgb, L); out[r * 4 + s] = (255 << 24) | (Math.round(B) << 16) | (Math.round(Gc) << 8) | Math.round(R); }));
+    return out;
+  };
+
+
+  // ---------- 一天中的天空：每个关键时刻 4 个色阶（上 → 下），相邻两帧之间用抖动过渡 ----------
+  const SKY = [
+    [0, [I, I, I + 1, I + 2]], [5, [I, I + 1, I + 3, U]], [6.3, [I + 2, U, A + 1, A + 2]], [7.8, [U + 1, U + 2, U + 3, C + 2]], [12, [U + 1, U + 2, U + 3, C + 3]],
+    [16.5, [U + 1, U + 2, U + 3, C + 2]], [18, [I + 3, U + 1, A + 2, A + 3]], [19.4, [I + 1, I + 3, U, A + 1]], [21, [I, I, I + 1, I + 2]], [24, [I, I, I + 1, I + 2]],
+  ];
+  // 材质：每种材质给 4 个色阶 [夜, 黄昏, 金色时刻, 白天]，和你原项目 MATS 的思路一样
+  const MATS = [
+    ['hillFar', [I + 1, I + 3, U + 1, U + 2]], ['hillNear', [I, I + 2, U, U + 1]], ['meadowFar', [I + 1, G, G + 1, G + 2]],
+    ['grass', [I + 1, G, G + 1, G + 2]], ['grassLt', [I + 2, G + 1, G + 2, G + 3]], ['grassDk', [I, I + 1, G, G + 1]],
+    ['leaf', [I, I + 1, G, G + 1]], ['leafMid', [I + 1, G, G + 1, G + 2]], ['leafLt', [I + 2, G + 1, G + 2, G + 3]],
+    ['trunk', [I + 1, I + 3, A, A]], ['trunkLt', [I + 2, A, A + 1, A + 1]], ['wall', [I + 2, U + 1, A + 3, C + 3]], ['wallSh', [I + 1, U, A + 2, C + 2]],
+    ['roof', [I, I + 1, I + 2, I + 3]], ['roofLt', [I + 1, I + 2, I + 3, U]], ['wood', [I + 1, I + 3, A, A]], ['woodLt', [I + 2, A, A + 1, A + 1]],
+    ['win', [A + 3, A + 2, U + 2, U + 1]], ['stone', [I + 1, I + 2, U, U + 1]], ['stoneLt', [I + 3, U, U + 1, U + 2]],
+    ['path', [I + 2, U, C, C + 1]], ['pathDk', [I + 1, I + 3, A, C]], ['flowerA', [I + 2, A, A + 2, A + 2]], ['flowerC', [I + 3, U + 1, C + 3, C + 3]],
+    ['hair', [I, I, I + 1, I + 1]], ['skin', [I + 3, A + 1, A + 3, A + 3]], ['shirt', [I + 2, A, A + 1, A + 2]], ['pants', [I + 1, I + 2, I + 3, I + 2]],
+  ];
+  const M = {}; MATS.forEach(([name], i) => { M[name] = i + 1; });            // 0 = 天空
+  const PERSON = ['.hhh.', '.hsh.', '.ttt.', 'ttttt', '.ttt.', '.ppp.', '.p.p.'];
+  const PCH = { h: 'hair', s: 'skin', t: 'shirt', p: 'pants' };
+
+  const createRenderer = (colors) => {
+    const pal = buildPalette(colors); const buf = new Uint32Array(N * N); const mat = new Uint8Array(N * N);
+    const LAD = MATS.map(([, l]) => l);
+    const WORLD = 61.5, BEZ = 62, KNOB_R = 67.75, SUN_CX = 76, SUN_CY = 94, SUN_R = 57;   // 窗口半径 / 圆环内沿 / 旋钮轨道 / 窗内太阳轨道
+    // ---------- 静态场景（只画一次） ----------
+    const put = (x, y, m) => { x = Math.floor(x); y = Math.floor(y); if (x >= 0 && x < N && y >= 0 && y < N) mat[y * N + x] = m; };
+    const rect = (x, y, w, h, m) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) put(x + i, y + j, m); };
+    const disc = (cx, cy, r, m) => { for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let x = Math.floor(cx - r); x <= cx + r; x++) if ((x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 <= r * r) put(x, y, m); };
+    const n2 = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); return mix(mix(hash(xi, yi, 5), hash(xi + 1, yi, 5), u), mix(hash(xi, yi + 1, 5), hash(xi + 1, yi + 1, 5), u), v); };
+    const farH = (x) => 86 + n2(x * 0.035 + 3, 1) * 9 - 3, midH = (x) => 94 + n2(x * 0.05 + 9, 4) * 5 - 2 * Math.sin(x * 0.04), meadowH = (x) => 100 + Math.sin(x * 0.045 + 0.6) * 2 + (n2(x * 0.12, 7) - 0.5) * 1.6;
+    const paintScene = () => {
+      for (let x = 0; x < N; x++) {
+        for (let y = Math.floor(farH(x)); y < N; y++) put(x, y, y < farH(x) + 1.5 ? M.hillFar : (bay(x, y) < 0.25 ? M.hillNear : M.hillFar));
+        for (let y = Math.floor(midH(x)); y < N; y++) put(x, y, y < midH(x) + 1 ? M.grassLt : (bay(x, y) < 0.3 ? M.grassDk : M.meadowFar));
+        for (let y = Math.floor(meadowH(x)); y < N; y++) { const n = n2(x * 0.09 + 2, y * 0.22), d = y - meadowH(x); put(x, y, d < 1 ? M.grassLt : (n > 0.66 && bay(x, y) < 0.7) ? M.grassLt : (n < 0.32 && bay(x, y) < 0.6) ? M.grassDk : M.grass); }
+      }
+      // 小路：从门口弯到右下角
+      for (let s = 0; s <= 60; s++) { const t = s / 60; const px = 61.5 + t * 44 + Math.sin(t * 3.4) * 7 * (1 - t * 0.3), py = 106 + t * 34, w = 3 + t * 9; for (let x = Math.floor(px - w); x <= px + w; x++) for (let y = Math.floor(py - 1.2); y <= py + 1.2; y++) { const e = Math.abs(x + 0.5 - px) / w; put(x, y, e > 0.82 ? M.pathDk : (hash(x, y, 3) < 0.07 ? M.pathDk : M.path)); } }
+      // 灌木
+      const bush = (cx, cy, rx, ry, seed) => { for (let y = Math.floor(cy - ry); y <= cy + ry; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) { const d = ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2; if (d > 1) continue; const v = 0.62 - ((x - cx) * 0.4 + (y - cy) * 0.9) / (rx * 2.2) + (hash(x, y, seed) - 0.5) * 0.35 + (bay(x, y) - 0.5) * 0.3; put(x, y, v > 0.7 ? M.leafLt : v > 0.4 ? M.leafMid : M.leaf); } };
+      bush(36, 102, 8, 5.5, 11); bush(28, 106, 6, 4, 12); bush(88, 104, 5, 3.5, 13);
+      // 小屋
+      const X0 = 46, X1 = 78, TOP = 86, BASE = 105;
+      rect(X0, TOP, X1 - X0, BASE - TOP, M.wall); rect(X1 - 4, TOP, 4, BASE - TOP, M.wallSh); for (let x = X0; x < X1; x++) { if (bay(x, TOP + 1) < 0.5) put(x, TOP + 2, M.wallSh); put(x, TOP, M.wallSh); put(x, TOP + 1, M.wallSh); }
+      for (let y = TOP + 6; y < BASE - 2; y += 6) for (let x = X0; x < X1; x += 2) if ((x + y) % 4 === 0) put(x, y, M.wallSh);
+      rect(X0 - 1, BASE - 2, X1 - X0 + 2, 3, M.stone); for (let x = X0; x < X1; x += 4) put(x, BASE - 2, M.stoneLt);
+      for (let y = 70; y < TOP; y++) { const l = Math.round(52 - (y - 70) * 0.75), r = Math.round(72 + (y - 70) * 0.75); for (let x = l; x <= r; x++) { const row = y - 70; let m = row % 2 === 0 ? M.roofLt : M.roof; if (row % 2 === 0 && (x + ((row >> 1) & 1) * 2) % 4 === 0) m = M.roof; if (row % 2 === 0 && x - l < 5 + row * 0.4 && bay(x, y) < 0.5) m = M.roofLt; put(x, y, m); } }
+      rect(52, 69, 21, 1, M.roofLt); rect(39, TOP, 47, 2, M.wood); rect(39, TOP + 2, 47, 1, M.roof);
+      rect(70, 58, 6, 18, M.stone); rect(70, 58, 2, 18, M.stoneLt); rect(69, 57, 8, 2, M.stoneLt); for (let y = 60; y < 76; y += 3) rect(72, y, 4, 1, M.stoneLt);
+      rect(58, 92, 8, 13, M.wood); rect(59, 93, 6, 11, M.woodLt); rect(61, 93, 2, 11, M.wood); rect(58, 92, 8, 1, M.roof); put(64, 99, M.win);
+      const win = (x0) => { rect(x0 - 1, 91, 9, 10, M.wood); rect(x0, 92, 7, 8, M.win); rect(x0 + 3, 92, 1, 8, M.wood); rect(x0, 95, 7, 1, M.wood); rect(x0 - 3, 92, 2, 8, M.woodLt); rect(x0 + 8, 92, 2, 8, M.woodLt); rect(x0 - 1, 101, 9, 2, M.wood); for (let i = 0; i < 4; i++) put(x0 + i * 2, 100, i % 2 ? M.flowerC : M.flowerA); };
+      win(50); win(70); rect(57, BASE, 10, 2, M.stone); rect(56, BASE + 1, 12, 1, M.stoneLt);
+      // 栅栏
+      for (let x = 80; x < 108; x += 4) { rect(x, 98, 2, 7, M.wall); put(x, 97, M.wall); put(x + 1, 97, M.wallSh); rect(x + 1, 98, 1, 7, M.wallSh); } rect(79, 100, 30, 1, M.wallSh); rect(79, 103, 30, 1, M.wallSh);
+      // 大树
+      for (let y = 60; y < 102; y++) for (let x = 90; x < 136; x++) { const inC = (cx, cy, r) => (x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 <= r * r; if (!(inC(108, 80, 15) || inC(99, 86, 10) || inC(118, 86, 10) || inC(108, 70, 10) || inC(117, 74, 8) || inC(100, 75, 8))) continue; const v = 0.55 - ((x - 108) * 0.5 + (y - 80) * 0.9) / 42 + (n2(x * 0.5, y * 0.5) - 0.5) * 0.45 + (bay(x, y) - 0.5) * 0.3; put(x, y, v > 0.68 ? M.leafLt : v > 0.4 ? M.leafMid : M.leaf); }
+      rect(106, 92, 5, 14, M.trunk); rect(106, 92, 2, 14, M.trunkLt); rect(104, 103, 9, 3, M.trunk); put(104, 105, M.trunk); put(112, 105, M.trunk); put(108, 96, M.leaf); put(109, 100, M.leaf);
+      // 长椅
+      rect(114, 103, 14, 2, M.wood); rect(115, 105, 2, 3, M.wood); rect(125, 105, 2, 3, M.wood); rect(114, 103, 14, 1, M.woodLt);
+      // 花
+      const rr = (i) => hash(i, 77, 3); for (let i = 0; i < 90; i++) { const x = 12 + rr(i) * 128, y = 102 + rr(i + 500) * 36; if (mat[Math.floor(y) * N + Math.floor(x)] === M.grass || mat[Math.floor(y) * N + Math.floor(x)] === M.grassLt) put(x, y, rr(i + 900) < 0.55 ? M.flowerA : M.flowerC); }
+      for (let i = 0; i < 40; i++) { const x = 10 + hash(i, 5, 8) * 130, y = 104 + hash(i, 6, 8) * 34; if (mat[Math.floor(y) * N + Math.floor(x)] === M.grass) { put(x, y, M.grassLt); put(x - 1, y - 1, M.grassLt); put(x + 1, y - 1, M.grassLt); } }
+    };
+    paintScene();
+    const st = { smoke: [], smokeT: 0 };
+    const CLOUDS = [[-30, 36, 1, 2.2], [48, 28, 0.8, 1.5], [112, 46, 1.05, 2.8], [160, 32, 0.7, 1.9]];
+    const BIRDS = [[0, 34, 6], [70, 44, 5.2]];
+
+    const render = (hour, t = 0, opts = {}) => {
+      const calm = !!opts.calm; const hh = ((hour % 24) + 24) % 24;
+      const th = ((hh - 12) / 24) * TAU; const sn = Math.sin(th), cs = Math.cos(th);
+      const tone = clamp((cs + 0.35) / 0.9) * 3; const night = clamp(smooth(18.4, 20.6, hh) + (1 - smooth(4.6, 6.2, hh)));
+      let k = 0; while (k < SKY.length - 2 && hh >= SKY[k + 1][0]) k++; const pk = smooth(SKY[k][0], SKY[k + 1][0], hh); const kA = SKY[k][1], kB = SKY[k + 1][1];
+      const sunX = SUN_CX + sn * SUN_R, sunY = SUN_CY - cs * SUN_R, moonX = SUN_CX - sn * SUN_R, moonY = SUN_CY + cs * SUN_R;
+      const knobX = CX + sn * KNOB_R, knobY = CY - cs * KNOB_R; const isSun = tone > 1.0;
+      const lampAmt = clamp((1.4 - tone) / 1.4);                           // 灯光强度
+      const present = tone > 1.6;                                           // 白天长椅上有人
+      // 阴影方向：与太阳相反
+      const shOff = clamp(-sn * 1.0, -1, 1);
+      if (!calm) { st.smokeT -= 1 / 30; if (st.smokeT <= 0) { st.smokeT = 0.6; st.smoke.push({ x: 72.5, y: 57, a: 0, s: Math.random() * 6 }); } for (let i = st.smoke.length - 1; i >= 0; i--) { const p = st.smoke[i]; p.a += 1 / 30; p.y -= 5.5 / 30; p.x += (1 + Math.sin(p.a * 2 + p.s) * 1.2) / 30; if (p.a > 3.2) st.smoke.splice(i, 1); } }
+      const ff = []; if (night > 0.45) for (let i = 0; i < 9; i++) { const a = t * (0.25 + i * 0.03) + i * 1.7; ff.push([34 + ((i * 37) % 90) + Math.sin(a * 1.3) * 8, 104 + ((i * 53) % 26) + Math.cos(a) * 5, i]); }
+
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        const dx = x + 0.5 - CX, dy = y + 0.5 - CY, r = Math.hypot(dx, dy); const o = y * N + x;
+        if (r > 75.6) { buf[o] = 0; continue; }
+        let idx;
+        if (r >= BEZ) {
+          // ---- 表盘圆环：左上受光的斜面、中间一圈刻度槽 ----
+          const ux = dx / r, uy = dy / r; const lit = -ux * 0.707 - uy * 0.707; const phi = (Math.atan2(ux, -uy) + TAU) % TAU;
+          if (r >= 74.6) idx = I;
+          else if (r >= 71.6) idx = r < 72.6 ? (lit > 0.25 ? U + 1 : I + 2) : (lit > 0.6 ? U : lit < -0.45 ? I + 2 : I + 3);
+          else if (r >= 64.6) {
+            idx = r < 65.6 ? I : I + 1;
+            const hf = (phi / TAU) * 24, fr = hf - Math.round(hf), kk = ((Math.round(hf) % 24) + 24) % 24, major = kk % 6 === 0, mid = kk % 3 === 0, near = Math.abs(fr) * ((TAU * r) / 24);
+            if (near < 0.55 && r > 66.2 && r < 69.2 + (major ? 0.9 : 0) - (major ? 0 : (mid ? 0 : 0.7))) idx = major ? A + 2 : mid ? U + 2 : U;
+          } else idx = r > 63.6 ? (-lit > 0.25 ? U : I + 2) : (-lit > 0.3 ? U + 1 : I + 3);
+          // ---- 旋钮：白天是太阳，夜里是月牙 ----
+          const kd = Math.hypot(x + 0.5 - knobX, y + 0.5 - knobY);
+          if (kd <= 6.6) {
+            const kx = x + 0.5 - knobX, ky = y + 0.5 - knobY;
+            if (isSun) { idx = kd > 5.6 ? A : kd > 4.4 ? A + 1 : A + 2; if (kd < 3.4 && kx + ky < 0.4) idx = A + 3; if (kd < 4.4 && kx + ky > 2) idx = A + 1; }
+            else { idx = kd > 5.6 ? I : kd > 4.6 ? I + 3 : U + 2; const cd = Math.hypot(kx - 2.3, ky + 1.5); if (kd <= 5.6 && kd > 4.6) idx = I + 3; if (kd <= 4.6) { idx = cd < 4.3 ? I + 1 : (kx + ky < 0 ? C + 3 : U + 3); if (cd >= 4.3 && cd < 5) idx = U + 2; } }
+          } else if (isSun && !calm && kd <= 9.2 && kd > 7.2 && r < 75) { const ang = Math.atan2(y + 0.5 - knobY, x + 0.5 - knobX) - t * 0.5; if (Math.abs(Math.sin(ang * 4)) > 0.95) idx = A + 2; }
+        } else {
+          const m = mat[o];
+          if (m === 0) {
+            // ---- 天空 ----
+            const yn = clamp((y - 14) / 82); const key = bay(x + 2, y + 1) < pk ? kB : kA; const pos = Math.pow(yn, 1.15) * 3; const i0 = Math.min(2, Math.floor(pos)); idx = key[bay(x, y) < pos - i0 ? i0 + 1 : i0];
+            if (night > 0.3) { const hs = hash(x, y, 9); if (hs < 0.014 && hash(x, y, 4) < night && (calm || Math.sin(t * 2 + hs * 900) > -0.5)) idx = hs < 0.003 ? C + 3 : hs < 0.008 ? U + 3 : U + 2; }
+            const ds = Math.hypot(x + 0.5 - sunX, y + 0.5 - sunY), dm = Math.hypot(x + 0.5 - moonX, y + 0.5 - moonY);
+            const gs = Math.pow(Math.max(0, 1 - ds / 21), 2) * 0.7 * clamp(tone / 1.2), gm = Math.pow(Math.max(0, 1 - dm / 15), 2) * 0.45 * night;
+            if (bay(x + 3, y) < gs) idx = tone > 2.2 ? C + 3 : A + 3; else if (bay(x, y + 3) < gm) idx = U + 3;
+            if (ds <= 6.2 && tone > 0.3) idx = ds > 5 ? A + 2 : A + 3; if (ds <= 6.2 && tone > 2.4 && ds <= 5) idx = C + 3;
+            if (!calm && tone > 1.2 && ds > 7.4 && ds < 10) { const ang = Math.atan2(y + 0.5 - sunY, x + 0.5 - sunX) - t * 0.25; if (Math.abs(Math.sin(ang * 5)) > 0.95) idx = A + 3; }
+            if (dm <= 5.4 && night > 0.12) { idx = C + 3; const cx = x + 0.5 - moonX, cy = y + 0.5 - moonY; if (dm > 4.4) idx = U + 3; if ((Math.abs(cx - 1.6) < 0.9 && Math.abs(cy + 1.4) < 0.9) || (Math.abs(cx + 1.4) < 1 && Math.abs(cy - 1.5) < 0.8) || (Math.abs(cx - 0.2) < 0.7 && Math.abs(cy - 0.2) < 0.6)) idx = U + 2; }
+            for (let c = 0; c < CLOUDS.length; c++) { const cd = CLOUDS[c]; const cx0 = ((cd[0] + (calm ? 0 : t * cd[3])) % 214 + 214) % 214 - 31; const sc = cd[2]; const ex = x + 0.5 - cx0, ey = y + 0.5 - cd[1];
+              const inside = (ex / (9 * sc)) ** 2 + (ey / (3.2 * sc)) ** 2 < 1 || ((ex + 7 * sc) / (6 * sc)) ** 2 + ((ey - sc) / (2.6 * sc)) ** 2 < 1 || ((ex - 6 * sc) / (7 * sc)) ** 2 + ((ey - sc) / (2.4 * sc)) ** 2 < 1 || ((ex + 2 * sc) / (5 * sc)) ** 2 + ((ey + 2.2 * sc) / (2.4 * sc)) ** 2 < 1;
+              if (inside) { const lad = [I + 2, U, A + 3, C + 3]; const tf = tone - (ey > 0.6 * sc ? 0.9 : 0); idx = lad[clamp(Math.round(tf + (bay(x, y) - 0.5) * 1.05), 0, 3)]; break; } }
+          } else {
+            const lad = LAD[m - 1]; idx = lad[clamp(Math.round(tone + (bay(x, y) - 0.5) * 1.05), 0, 3)];
+            // 草地：树和小屋的影子（背着太阳）
+            if (y > 99 && (m === M.grass || m === M.grassLt || m === M.grassDk || m === M.path)) {
+              const e1 = ((x + 0.5 - (108 + shOff * 14)) / 18) ** 2 + ((y + 0.5 - 108) / 3.4) ** 2, e2 = ((x + 0.5 - (62 + shOff * 10)) / 22) ** 2 + ((y + 0.5 - 107.5) / 2.6) ** 2;
+              if (tone > 1.6 && (e1 < 1 || e2 < 1) && bay(x, y) < 0.8) idx = (idx & 3) > 0 ? idx - 1 : idx;
+              // 夜里小屋门前的暖光
+              if (lampAmt > 0.05) { const d = Math.hypot((x + 0.5 - 62) / 24, (y + 0.5 - 110) / 8); if (d < 1 && bay(x, y) < (1 - d) * lampAmt * 1.5) idx = d < 0.5 ? A + 1 : A; }
+            }
+            if (m === M.win && lampAmt > 0.5 && !calm && Math.sin(t * 1.7 + (x > 60 ? 2 : 0)) > 0.93) idx = A + 2;
+          }
+          // 白天长椅上看书的人
+          if (present && y >= 96 && y < 103 && x >= 118 && x < 123) { const ch = PERSON[y - 96][x - 118]; if (ch !== '.') { const l = LAD[M[PCH[ch]] - 1]; idx = l[clamp(Math.round(tone), 0, 3)]; } }
+          // 烟 / 小鸟 / 萤火虫
+          for (const p of st.smoke) { const sz = 1 + Math.floor(p.a * 0.6); if (x >= Math.round(p.x) && x < Math.round(p.x) + sz && y >= Math.round(p.y) && y < Math.round(p.y) + sz && bay(x, y) < 0.95 - p.a * 0.25) idx = p.a > 1.8 ? (night > 0.5 ? I + 3 : C + 2) : (night > 0.5 ? U : C + 3); }
+          if (!calm && tone > 1.5) for (const b of BIRDS) { const bx = ((b[0] + t * b[2]) % 200 + 200) % 200 - 24, by = b[1] + Math.sin(t * 0.8 + b[0]) * 3; const fl = Math.floor(t * 3 + b[0]) & 1; const ox = x - Math.round(bx), oy = y - Math.round(by); if ((oy === (fl ? 0 : 1) && (ox === 0 || ox === 2)) || (oy === (fl ? 1 : 0) && ox === 1)) idx = I + 2; }
+          for (const f of ff) { if (x === Math.round(f[0]) && y === Math.round(f[1]) && (calm || Math.sin(t * 3 + f[2] * 2) > -0.2)) idx = A + 3; else if (x === Math.round(f[0]) + 1 && y === Math.round(f[1]) && bay(x, y) < 0.35) idx = A + 1; }
+          // 窗口内沿的暗角 + 左上角玻璃反光
+          if (r > 56 && bay(x, y) < (r - 56) / 6.5) idx = (idx & 3) > 0 ? idx - 1 : idx;
+          { const ga = (Math.atan2(dx, -dy) + TAU) % TAU; if (Math.abs(r - 57) < 0.7 && ga > 5.3 && ga < 5.8 && bay(x, y) < 0.35 + 3.2 * Math.sin(((ga - 5.3) / 0.5) * Math.PI) * 0.25) idx = C + 3; }
+        }
+        buf[o] = pal[idx];
+      }
+      return buf;
+    };
+    return { render, palette: pal, size: N };
+  };
+
+  const api = { createRenderer, buildPalette, size: N, geometry: { N, CX, CY, BEZ: 62, BEAD_R: 67.75 }, version: '1.0.0' };
+  if (typeof window !== 'undefined') window.PixelOrbit = Object.assign(window.PixelOrbit || {}, api);
+  if (typeof module !== 'undefined') module.exports = api;
+})();
+</script>
+<script>
+/* ============================================================
+ *  交互层：把渲染器挂到一个元素上
+ *  <div class="pixel-orbit" data-pixel-orbit data-hour="now"></div>
+ *  - 拖动圆环或旋钮：调整时间
+ *  - 点一下画面 / 旋钮：白天 ⇄ 夜晚
+ *  - 键盘：←/→/↑/↓ 调 30 分钟（Shift 或 PageUp/PageDown 调 3 小时），Home 正午，End 午夜，空格 / 回车切换
+ *  - 对外：el 上触发 `orbitchange` 事件，并写入 data-phase、--night（0~1）
+ * ============================================================ */
+(() => {
+  'use strict';
+  const PO = window.PixelOrbit; const { N, CX, CY, BEAD_R } = PO.geometry; const TAU = Math.PI * 2;
+  const mod = (v, m) => ((v % m) + m) % m;
+  const PHASES = { dawn: '清晨', day: '白天', dusk: '黄昏', night: '夜晚' };
+  const phaseOf = (h) => { h = mod(h, 24); return h >= 5 && h < 7.5 ? 'dawn' : h >= 7.5 && h < 17 ? 'day' : h >= 17 && h < 19.5 ? 'dusk' : 'night'; };
+  const nightOf = (h) => { h = mod(h, 24); const sm = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); }; return Math.min(1, sm(18.4, 20.6, h) + (1 - sm(4.6, 6.2, h))); };
+  const fmt = (h) => { h = mod(h, 24); const m = Math.round(h * 60) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+  const parseColor = (() => { let ctx = null; return (v) => { if (!v) return null; ctx = ctx || document.createElement('canvas').getContext('2d', { willReadFrequently: true }); ctx.canvas.width = ctx.canvas.height = 1; ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = v.trim(); ctx.fillRect(0, 0, 1, 1); const d = ctx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2]]; }; })();
+  const readColors = (el) => { const cs = getComputedStyle(el); const out = {}; for (const k of ['bg', 'surface', 'fg', 'muted', 'accent']) { const c = parseColor(cs.getPropertyValue('--orbit-' + k)); if (c) out[k] = c; } return out; };
+
+  const mount = (el, opts = {}) => {
+    const ds = el.dataset;
+    const o = { hour: opts.hour ?? ds.hour ?? 'now', autoplay: Number(opts.autoplay ?? ds.autoplay ?? 0), sync: opts.sync ?? ds.sync ?? '', label: opts.label ?? el.getAttribute('aria-label') ?? '昼夜轨道开关' };
+    const canvas = document.createElement('canvas'); canvas.width = N; canvas.height = N; canvas.setAttribute('aria-hidden', 'true'); el.appendChild(canvas);
+    const ctx = canvas.getContext('2d'); const img = ctx.createImageData(N, N); const u32 = new Uint32Array(img.data.buffer);
+    let renderer = PO.createRenderer(readColors(el));
+    el.setAttribute('role', 'slider'); el.setAttribute('aria-label', o.label); el.setAttribute('aria-valuemin', '0'); el.setAttribute('aria-valuemax', '24'); if (!el.hasAttribute('tabindex')) el.tabIndex = 0;
+    const motionQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false, addEventListener() {} };
+    let calm = motionQ.matches; const onMotion = () => { calm = motionQ.matches; wake(); }; if (motionQ.addEventListener) motionQ.addEventListener('change', onMotion);
+
+    const now = new Date(); let hour = o.hour === 'now' ? now.getHours() + now.getMinutes() / 60 : Number(o.hour); if (!Number.isFinite(hour)) hour = 12; let target = hour; let rate = 3.2;
+    let drag = null; let raf = 0; let lastTs = 0; let lastDraw = 0; let visible = true; let lastPhase = ''; let lastEmit = -99; let ro = null; let io = null; let dead = false; const listeners = new Set();
+
+    const unwrap = (h, ref) => h + 24 * Math.round((ref - h) / 24);
+    const aheadOf = (dest, ref) => { let t = dest + 24 * Math.floor(ref / 24); if (t <= ref + 0.01) t += 24; return t; };
+    const toggle = () => { const h = mod(target, 24); target = aheadOf(h >= 6 && h < 18 ? 23 : 12, target); rate = 3.2; wake(); };
+    const setHour = (h, animate = true) => { target = unwrap(mod(h, 24), target); if (!animate || calm) hour = target; rate = 3.2; wake(); };
+    const pointerTo = (e) => { const r = canvas.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * N - CX, ((e.clientY - r.top) / r.height) * N - CY]; };
+    const hourAt = (dx, dy, moon) => mod(12 + (Math.atan2(dx, -dy) / TAU) * 24 + (moon ? 12 : 0), 24);
+
+    const publish = () => {
+      const h = mod(hour, 24); const ph = phaseOf(h); const n = nightOf(h);
+      el.style.setProperty('--night', n.toFixed(3)); if (o.sync === 'root') document.documentElement.style.setProperty('--night', n.toFixed(3));
+      if (ph !== lastPhase || Math.abs(h - lastEmit) > 0.02) {
+        el.dataset.phase = ph; el.setAttribute('aria-valuenow', h.toFixed(2)); el.setAttribute('aria-valuetext', fmt(h) + ' · ' + PHASES[ph]);
+        if (ph !== lastPhase || Math.abs(h - lastEmit) > 0.25) { const detail = { hour: h, phase: ph, night: n > 0.5, nightAmount: n, label: PHASES[ph], time: fmt(h) }; el.dispatchEvent(new CustomEvent('orbitchange', { detail })); listeners.forEach((fn) => fn(detail)); lastEmit = h; }
+        lastPhase = ph;
+      }
+    };
+    const draw = (t) => { u32.set(renderer.render(hour, t, { calm })); ctx.putImageData(img, 0, 0); };
+    const fit = () => { const dpr = window.devicePixelRatio || 1; const w = el.clientWidth || N; const k = Math.max(1, Math.floor((w * dpr) / N)); canvas.style.width = canvas.style.height = (N * k) / dpr + 'px'; };
+
+    const frame = (ts) => {
+      raf = 0; if (dead) return; const dt = Math.min(0.1, (ts - lastTs) / 1000 || 0.016); lastTs = ts;
+      if (o.autoplay > 0 && !drag) { target += (dt * 24) / o.autoplay; hour = target; }
+      else { const d = target - hour; if (calm || Math.abs(d) < 0.0006) hour = target; else hour += d * (1 - Math.exp(-rate * dt)); }
+      const moving = Math.abs(target - hour) > 0.0006 || o.autoplay > 0 || !!drag;
+      if (moving || ts - lastDraw > 33) { draw(ts / 1000); lastDraw = ts; publish(); }
+      if (visible && !document.hidden && (!calm || moving)) raf = requestAnimationFrame(frame);
+    };
+    function wake() { if (!raf && !dead) { lastTs = performance.now(); raf = requestAnimationFrame(frame); } }
+
+    const down = (e) => {
+      if (e.button !== undefined && e.button !== 0) return; const [dx, dy] = pointerTo(e); const r = Math.hypot(dx, dy); if (r > 76) return;
+      const sun = ((hour - 12) / 24) * TAU; const sx = Math.sin(sun) * BEAD_R, sy = -Math.cos(sun) * BEAD_R;
+      const onKnob = Math.hypot(dx - sx, dy - sy) < 9;
+      drag = { x: e.clientX, y: e.clientY, moved: false, kind: onKnob ? 'knob' : r >= 62 ? 'ring' : 'world' };
+      try { el.setPointerCapture(e.pointerId); } catch (_) {}
+      if (drag.kind === 'ring') { target = unwrap(hourAt(dx, dy, false), target); rate = 16; }
+      wake(); e.preventDefault();
+    };
+    const move = (e) => {
+      if (!drag) return; if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 4) drag.moved = true; if (!drag.moved && drag.kind !== 'ring') return;
+      if (drag.kind === 'world') return; const [dx, dy] = pointerTo(e); target = unwrap(hourAt(dx, dy, false), target); rate = 16; wake();
+    };
+    const up = (e) => { if (!drag) return; const d = drag; drag = null; try { el.releasePointerCapture(e.pointerId); } catch (_) {} if (!d.moved && d.kind !== 'ring') toggle(); rate = 3.2; wake(); };
+    const key = (e) => {
+      const big = e.shiftKey ? 3 : 0.5; let used = true;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') target += big; else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') target -= big;
+      else if (e.key === 'PageUp') target += 3; else if (e.key === 'PageDown') target -= 3; else if (e.key === 'Home') target = aheadOf(12, target - 0.02); else if (e.key === 'End') target = aheadOf(24, target - 0.02);
+      else if (e.key === ' ' || e.key === 'Enter') toggle(); else used = false;
+      if (used) { rate = 8; e.preventDefault(); wake(); }
+    };
+    el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('keydown', key);
+    if (window.ResizeObserver) { ro = new ResizeObserver(fit); ro.observe(el); } else window.addEventListener('resize', fit);
+    if (window.IntersectionObserver) { io = new IntersectionObserver((es) => { visible = es[es.length - 1].isIntersecting; if (visible) wake(); }); io.observe(el); }
+    const onVis = () => { if (!document.hidden) wake(); }; document.addEventListener('visibilitychange', onVis);
+    fit(); draw(0); publish(); wake();
+
+    const api = {
+      el, setHour, toggle, getHour: () => mod(hour, 24), isNight: () => nightOf(hour) > 0.5, setAutoplay(s) { o.autoplay = Number(s) || 0; wake(); },
+      refreshColors() { renderer = PO.createRenderer(readColors(el)); draw(performance.now() / 1000); }, onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+      destroy() { dead = true; cancelAnimationFrame(raf); el.removeEventListener('pointerdown', down); el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); el.removeEventListener('keydown', key); document.removeEventListener('visibilitychange', onVis); if (ro) ro.disconnect(); if (io) io.disconnect(); if (motionQ.removeEventListener) motionQ.removeEventListener('change', onMotion); canvas.remove(); },
+    };
+    el.__pixelOrbit = api; return api;
+  };
+  PO.mount = mount;
+  const auto = () => document.querySelectorAll('[data-pixel-orbit]').forEach((el) => { if (!el.__pixelOrbit) mount(el); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto, { once: true }); else auto();
+})();
+</script>
+<script>
+  // ---------- 页面胶水代码：只用到组件的公开 API ----------
+  (() => {
+    const el = document.querySelector('.pixel-orbit'); const ring = el.__pixelOrbit;
+    const clock = document.getElementById('clock');
+    const show = (d) => { clock.textContent = d.time + ' · ' + d.label; };
+    ring.onChange(show); const [t0, l0] = el.getAttribute('aria-valuetext').split(' · '); show({ time: t0, label: l0 });
+    document.getElementById('btn-day').onclick = () => ring.setHour(12);
+    document.getElementById('btn-night').onclick = () => ring.setHour(23);
+    const auto = document.getElementById('btn-auto');
+    auto.onclick = () => { const on = auto.getAttribute('aria-pressed') !== 'true'; auto.setAttribute('aria-pressed', on); ring.setAutoplay(on ? 48 : 0); };
+    // 组件还会在元素上触发 'orbitchange' 事件：el.addEventListener('orbitchange', e => console.log(e.detail))
+  })();
+</script>
+</body>
+</html>
