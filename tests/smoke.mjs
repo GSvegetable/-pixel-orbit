@@ -37,4 +37,12 @@ assert.ok(html.includes("b.setAttribute('aria-pressed'"), 'preset pressed states
 assert.ok(html.includes("ring.setAutoplay(on?Number(prefs.speed):0)"), 'autoplay should use the saved speed preference');
 assert.ok(html.includes("document.documentElement.lang=prefs.language"), 'language changes must update the document language');
 assert.ok(html.includes("ring.refreshColors()"), 'palette changes must refresh the pixel renderer');
+assert.ok(html.includes("e.type !== 'pointercancel'"), 'cancelling a pointer gesture must not trigger the click/toggle action');
+assert.ok(html.includes("window.removeEventListener('resize', fit)"), 'fallback resize listeners must be removed when the component is destroyed');
+assert.ok(html.includes("if (el.__pixelOrbit === api) delete el.__pixelOrbit"), 'destroy must release the mount marker so the component can be mounted again');
+assert.ok(html.includes("Number.isFinite(seconds) && seconds > 0"), 'autoplay API must reject invalid and non-positive durations');
+for (const key of ['themeDefault', 'themeCoast', 'themeLavender', 'themeAmber', 'clock24', 'clock12', 'orbitLabel', 'rangeLabel']) {
+  assert.ok(html.includes(key), `missing localized setting or accessibility label: ${key}`);
+}
+assert.ok(html.includes("document.title=tr().pageTitle"), 'document title must follow the selected interface language');
 console.log(`Pixel Orbit smoke checks passed (${scripts.length} inline scripts parsed).`);
