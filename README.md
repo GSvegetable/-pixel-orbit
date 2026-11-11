@@ -70,9 +70,9 @@ python3 -m http.server 8080
 ### 启用在线版本（GitHub Pages）
 
 1. 打开仓库 **Settings → Pages**。
-2. 在 **Build and deployment** 中选择 **Deploy from a branch**。
-3. Branch 选择 `main`，目录选择 `/(root)`，保存。
-4. 等待 GitHub Pages 部署完成，再访问上方在线试玩地址。
+2. 在 **Build and deployment** 中将 **Source** 设为 **GitHub Actions**。
+3. 保存后，仓库中的 Pages 工作流会在 `main` 更新时自动发布网站。
+4. 等待 Actions 中的部署任务成功，再访问上方在线试玩地址。
 
 仓库根目录的 `index.html` 会自动跳转到主体验页 `pixel-orbit.html`。
 
@@ -182,7 +182,7 @@ Pixel Orbit は、時刻に合わせて景色が変化する、依存ライブ�
 
 ### GitHub Pages の設定
 
-**Settings → Pages** で **Deploy from a branch** を選び、Branch を `main`、フォルダーを `/(root)` に設定して保存します。公開が完了すると、上記のホスト版デモにアクセスできます。ルートの `index.html` から `pixel-orbit.html` に自動転送されます。
+**Settings → Pages** で **Source** を **GitHub Actions** に設定してください。`main` の更新時に Pages ワークフローが自動で公開します。Actions のデプロイが成功した後、上記のホスト版デモにアクセスできます。ルートの `index.html` からメイン版 `pixel-orbit.html` に自動転送されます。
 
 ### 開発者向けカスタマイズ
 
