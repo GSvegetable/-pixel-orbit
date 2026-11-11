@@ -20,21 +20,20 @@
 **Online demo:** https://gsvegetable.github.io/-pixel-orbit/  
 **Lab:** https://gsvegetable.github.io/-pixel-orbit/lab.html
 
-**Quick navigation:** [体验作品](./pixel-orbit.html) · [参数实验室](./lab.html) · [开发说明](./docs/DEVELOPMENT.md) · [更新日志](./CHANGELOG.md) · [自动化检查](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
-
-> GitHub Pages must be enabled for the `main` branch (/`root`) before the online links become available. The links above are the intended Pages addresses; if they do not open yet, use the GitHub Pages setup instructions below or open the files directly from the repository.
+**Quick navigation:** [主体验 · 田园版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html) · [第二视觉 · 星球版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html) · [参数实验室](https://gsvegetable.github.io/-pixel-orbit/lab.html) · [开发说明](./docs/DEVELOPMENT.md) · [更新日志](./CHANGELOG.md) · [自动化检查](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
 
 ---
 
 ## 中文说明
 
-Pixel Orbit 是一个无需依赖、无需构建步骤的像素昼夜互动作品。拖动圆环或调整时间滑块，可以观察小屋、天空、太阳、月亮、灯光与环境色随一天变化。
+Pixel Orbit 是一个无需依赖、无需构建步骤的像素昼夜互动作品，现提供两种独立视觉版本：主版本以田园小屋为核心，星球版以球面地形和昼夜轨道为核心。拖动圆环或调整时间，可以观察光照与场景随一天变化。
 
 ### 体验入口
 
 - **[在线试玩](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html)**：直接打开完整互动页面。
 - **[实验室 / 参数说明](https://gsvegetable.github.io/-pixel-orbit/lab.html)**：查看控制方式、可调参数与开发接口。
-- **[GitHub Pages 在线版](https://gsvegetable.github.io/-pixel-orbit/)**：启用 Pages 后可通过浏览器访问。
+- **[星球版 · 第二种视觉效果](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html)**：球面地形、云层、昼夜光照与太阳/月亮轨道的另一种演绎。
+- **[网站首页](https://gsvegetable.github.io/-pixel-orbit/)**：打开 Pixel Orbit 主体验。
 
 ### 功能
 
@@ -103,7 +102,8 @@ Pixel Orbit is a dependency-free pixel-art day/night experience. Move through a 
 
 - **[Play the experience](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html)** — open the interactive scene.
 - **[Open the Lab](https://gsvegetable.github.io/-pixel-orbit/lab.html)** — explore controls, tunable settings and the developer API.
-- **[Hosted demo](https://gsvegetable.github.io/-pixel-orbit/)** — available after GitHub Pages is enabled.
+- **[Planet variant](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html)** — an alternate globe, clouds and orbital day/night treatment.
+- **[Hosted demo](https://gsvegetable.github.io/-pixel-orbit/)** — open the main experience.
 
 ### Features
 
@@ -133,7 +133,7 @@ No build step or package installation is required. Open `pixel-orbit.html`, or r
 
 ### Enable GitHub Pages
 
-In **Settings → Pages**, choose **Deploy from a branch**, select `main` and `/(root)`, then save. Once deployment finishes, the hosted demo link above will serve the project. The root `index.html` forwards visitors to `pixel-orbit.html`.
+In **Settings → Pages**, set **Source** to **GitHub Actions**. The repository workflow publishes the root directory after changes land on `main`. The root `index.html` forwards visitors to the main countryside experience.
 
 ### Developer customization
 
@@ -145,13 +145,14 @@ The public API includes `window.PixelOrbit.createRenderer(colors)`, `window.Pixe
 
 ## 日本語
 
-Pixel Orbit は、時刻に合わせて景色が変化する、依存ライブラリ不要のピクセルアート作品です。円形のダイヤルを動かして、一日の光の移り変わりを楽しめます。
+Pixel Orbit は、時刻に合わせて景色が変化する、依存ライブラリ不要のピクセルアート作品です。田園小屋を描くメイン版と、球面の惑星を描く別バージョンを用意しています。
 
 ### 体験する
 
 - **[オンラインで遊ぶ](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html)** — メインのインタラクティブ画面を開きます。
 - **[ラボ / 設定ガイド](https://gsvegetable.github.io/-pixel-orbit/lab.html)** — 操作方法、調整できる項目、開発者向け API を確認できます。
-- **[ホスト版デモ](https://gsvegetable.github.io/-pixel-orbit/)** — GitHub Pages の有効化後に利用できます。
+- **[惑星版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html)** — 球面地形、雲、昼夜の光を使った別のビジュアルです。
+- **[ホスト版デモ](https://gsvegetable.github.io/-pixel-orbit/)** — メイン体験を開きます。
 
 ### 主な機能
 
@@ -197,7 +198,8 @@ Pixel Orbit は、時刻に合わせて景色が変化する、依存ライブ�
 -pixel-orbit/
 ├── .github/workflows/quality.yml  # GitHub Actions quality gate
 ├── tests/smoke.mjs                # Dependency-free syntax and feature checks
-├── pixel-orbit.html               # Main interactive experience and renderer
+├── pixel-orbit.html               # Main countryside experience and renderer
+├── pixel-orbit-planet.html        # Alternate pixel-planet visual experience
 ├── lab.html                       # Live playground and developer reference
 ├── index.html                     # GitHub Pages entry point
 ├── docs/DEVELOPMENT.md            # Architecture, lifecycle and test notes
