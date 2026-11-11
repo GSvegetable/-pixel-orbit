@@ -45,4 +45,25 @@ for (const key of ['themeDefault', 'themeCoast', 'themeLavender', 'themeAmber', 
   assert.ok(html.includes(key), `missing localized setting or accessibility label: ${key}`);
 }
 assert.ok(html.includes("document.title=tr().pageTitle"), 'document title must follow the selected interface language');
-console.log(`Pixel Orbit smoke checks passed (${scripts.length} inline scripts parsed).`);
+
+const rootEntry = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+assert.ok(rootEntry.includes('url=./pixel-orbit.html'), 'root entry must provide a no-JavaScript fallback redirect');
+assert.ok(rootEntry.includes("window.location.replace(new URL('./pixel-orbit.html'"), 'root entry must navigate to the main experience');
+
+const lab = readFileSync(new URL('../lab.html', import.meta.url), 'utf8');
+assert.ok(lab.includes('iframe src="./pixel-orbit.html"'), 'lab must embed the live experience');
+assert.ok(lab.includes('title="Pixel Orbit interactive playground"'), 'lab iframe must have an accessible title');
+assert.ok(lab.includes('loading="lazy"'), 'lab preview should defer loading until needed');
+for (const apiMethod of ['setHour(18)', 'setAutoplay(48)', 'getHour()', 'isNight()', 'refreshColors()', 'destroy()']) {
+  assert.ok(lab.includes(apiMethod), `lab developer reference is missing API method: ${apiMethod}`);
+}
+
+const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+assert.ok(readme.includes('actions/workflows/quality.yml/badge.svg'), 'README must expose the quality workflow badge');
+for (const relativePath of ['./pixel-orbit.html', './lab.html', './docs/DEVELOPMENT.md', './CHANGELOG.md']) {
+  assert.ok(readme.includes(relativePath), `README navigation is missing: ${relativePath}`);
+}
+assert.ok(readme.includes('node tests/smoke.mjs'), 'README must document the executable local quality check');
+
+console.log(`Pixel Orbit smoke checks passed (${scripts.length} inline scripts parsed; renderer, controls, lifecycle, entry point, lab and README verified).`);
+
