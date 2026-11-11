@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f2e8d2">
+<title>Pixel Orbit Lab</title>
+<style>
+:root{color-scheme:light dark;--bg:#f2e8d2;--fg:#1b2146;--line:rgba(27,33,70,.2);--accent:#efa02c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+main{width:min(100% - 32px,920px);margin:0 auto;padding:34px 0 56px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:18px}
+.eyebrow{font-size:11px;letter-spacing:.2em;opacity:.6}h1{font-size:clamp(25px,5vw,42px);letter-spacing:.08em;margin:8px 0}p{margin:.5rem 0}.muted{opacity:.65}
+a{color:inherit;text-underline-offset:4px}.button{display:inline-block;padding:9px 13px;border:1px solid currentColor;text-decoration:none;box-shadow:3px 3px 0 currentColor}
+section{margin-top:28px}.preview{border:1px solid var(--line);background:#0c1030;overflow:hidden}
+iframe{display:block;width:100%;height:850px;border:0;background:#0c1030}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+article{border:1px solid var(--line);padding:16px}h2{font-size:16px;letter-spacing:.08em}h3{font-size:13px;margin:0 0 8px}
+code{overflow-wrap:anywhere;background:rgba(127,127,127,.12);padding:2px 4px}
+table{width:100%;border-collapse:collapse;text-align:left}td,th{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:11px;opacity:.65}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;border:1px solid var(--line);background:rgba(127,127,127,.08)}
+footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);font-size:11px;opacity:.55}
+@media(max-width:560px){iframe{height:900px}main{padding-top:22px}td,th{font-size:12px}}
+</style>
+</head>
+<body>
+<main>
+<header><div><div class="eyebrow">PIXEL ORBIT / EXPERIMENTAL SPACE</div><h1>THE LAB</h1><p class="muted">调试、体验与参数参考 · Explore the controls and customize the tiny world.</p></div><a class="button" href="./pixel-orbit.html">打开完整体验 ↗</a></header>
+<section><h2>LIVE PLAYGROUND / 在线实验区</h2><p class="muted">下面是完整互动作品。可直接拖动圆环、调整时间、切换配色与自动循环速度。</p><div class="preview"><iframe src="./pixel-orbit.html" title="Pixel Orbit interactive playground" loading="lazy"></iframe></div></section>
+<section><h2>ADJUSTABLE PARAMETERS / 可调参数</h2><div class="grid">
+<article><h3>TIME / 时间</h3><p>00:00–23:59。拖动轨道或使用时间滑块，观察场景光照变化。</p></article>
+<article><h3>AUTO CYCLE / 自动循环</h3><p>12–180 秒 / 天。数值越小，虚拟的一天流逝越快。</p></article>
+<article><h3>COLOR MOOD / 色彩氛围</h3><p>原始田园、海岸薄雾、薰衣草暮色、琥珀暖光。</p></article>
+<article><h3>LANGUAGE / 界面语言</h3><p>简体中文、English、日本語。</p></article>
+<article><h3>CLOCK / 时间格式</h3><p>12 小时制或 24 小时制，也可同步设备本地时间。</p></article>
+<article><h3>PREFERENCES / 偏好设置</h3><p>速度、主题、语言与时间格式保存在当前浏览器；重置按钮可恢复默认值。</p></article>
+</div></section>
+<section><h2>THEME TOKENS / 主题色参数</h2><p>在 <code>.pixel-orbit</code> 上覆盖以下五个 CSS 变量，即可制作自己的主题：</p><pre><code>.pixel-orbit {
+  --orbit-bg: #f5ecd9;
+  --orbit-surface: #8c9a62;
+  --orbit-fg: #1b2146;
+  --orbit-muted: #7f97b3;
+  --orbit-accent: #efa02c;
+}</code></pre><p class="muted">运行时修改变量后，调用挂载实例的 <code>refreshColors()</code> 刷新画面配色。</p></section>
+<section><h2>DEVELOPER API / 开发接口</h2><pre><code>const orbit = window.PixelOrbit.mount(
+  document.querySelector('.pixel-orbit')
+);
+
+orbit.setHour(18);       // 设置为 18:00
+orbit.setAutoplay(48);   // 48 秒走完一天
+orbit.toggle();          // 切换昼夜
+orbit.getHour();         // 读取当前小时
+orbit.isNight();         // 是否为夜晚
+orbit.refreshColors();   // 刷新配色
+orbit.destroy();         // 卸载实例</code></pre></section>
+<footer>PIXEL ORBIT LAB · A LITTLE WORLD IN MOTION · <a href="./README.md">README</a> · <a href="./pixel-orbit.html">PLAY</a></footer>
+</main>
+</body>
+</html>
