@@ -1,0 +1,31 @@
+name: Pixel Orbit quality
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pixel-orbit.html"
+      - "tests/**"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - "pixel-orbit.html"
+      - "tests/**"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Syntax and feature smoke checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run smoke checks
+        run: node tests/smoke.mjs
