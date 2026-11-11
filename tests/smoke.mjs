@@ -22,7 +22,7 @@ for (const hour of [0, 6, 12, 18, 23]) {
 
 for (const feature of [
   'data-pixel-orbit', 'data-hour="now"', 'data-sync="root"',
-  'time-range', 'data-preset="6"', 'data-preset="12"',
+  'time-range', 'speed-range', 'theme-select', 'language-select', 'clock-mode', 'btn-now', 'btn-reset', 'diag-dpr', 'pixel-orbit:prefs', 'coast:', 'lavender:', 'amber:', 'data-i18n="subtitle"', 'data-preset="6"', 'data-preset="12"',
   'data-preset="18"', 'data-preset="23"', 'btn-auto',
   'prefers-reduced-motion', 'ResizeObserver', 'IntersectionObserver',
   'orbitchange', 'aria-valuetext', 'refreshColors', 'destroy()',
@@ -31,7 +31,7 @@ for (const feature of [
 
 assert.ok(html.includes('const ring = el.__pixelOrbit || window.PixelOrbit.mount(el)'),
   'page controller must mount synchronously if DOMContentLoaded has not mounted the component');
-assert.ok(html.includes("timeRange.addEventListener('input'"), 'time slider must be interactive');
+assert.ok(html.includes("range.addEventListener('input'"), 'time slider must be interactive');
 assert.ok(html.includes("button.setAttribute('aria-pressed'"), 'preset pressed states must stay synchronized');
 
-console.log(`Pixel Orbit smoke checks passed (${scripts.length} inline scripts parsed).`);
+assert.ok(html.includes("ring.setAutoplay(on?Number(prefs.speed):0)"), 'autoplay should use the saved speed preference');\nassert.ok(html.includes("document.documentElement.lang=prefs.language"), 'language changes must update the document language');\nassert.ok(html.includes("ring.refreshColors()"), 'palette changes must refresh the pixel renderer');\nconsole.log(`Pixel Orbit smoke checks passed (${scripts.length} inline scripts parsed).`);
