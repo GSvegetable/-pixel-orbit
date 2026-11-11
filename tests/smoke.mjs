@@ -29,10 +29,10 @@ for (const feature of [
   'window.PixelOrbit.mount(el)', 'Math.abs(h - lastEmit) >= 1 / 120'
 ]) assert.ok(html.includes(feature), `missing expected feature: ${feature}`);
 
-assert.ok(html.includes('const ring = el.__pixelOrbit || window.PixelOrbit.mount(el)'),
+assert.ok(html.includes('const ring=el.__pixelOrbit||window.PixelOrbit.mount(el)'),
   'page controller must mount synchronously if DOMContentLoaded has not mounted the component');
 assert.ok(html.includes("range.addEventListener('input'"), 'time slider must be interactive');
-assert.ok(html.includes("button.setAttribute('aria-pressed'"), 'preset pressed states must stay synchronized');
+assert.ok(html.includes("b.setAttribute('aria-pressed'"), 'preset pressed states must stay synchronized');
 
 assert.ok(html.includes("ring.setAutoplay(on?Number(prefs.speed):0)"), 'autoplay should use the saved speed preference');
 assert.ok(html.includes("document.documentElement.lang=prefs.language"), 'language changes must update the document language');
