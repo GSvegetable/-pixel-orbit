@@ -40,6 +40,20 @@
   .pixel-orbit:active { cursor: grabbing; }
   .pixel-orbit:focus-visible { outline: 3px solid var(--orbit-accent); outline-offset: 8px; }
   .pixel-orbit canvas { display: block; image-rendering: pixelated; pointer-events: none; filter: drop-shadow(0 .9rem 1.4rem rgb(0 0 0 / .3)); }
+
+  /* ---------- 操作面板：不干预像素画布，只增强外围体验 ---------- */
+  .time-panel { width:min(100%, 460px); display:grid; gap:.7rem; text-align:left; }
+  .time-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; font-size:.72rem; letter-spacing:.08em; opacity:.8; }
+  .time-head output { font-size:.8rem; letter-spacing:0; min-height:0; }
+  input[type="range"] { width:100%; accent-color:var(--orbit-accent, #efa02c); cursor:pointer; }
+  .preset-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.5rem; width:min(100%,460px); }
+  .preset-row button { padding:.45rem .3rem; font-size:.75rem; }
+  .preset-row button[aria-pressed="true"] { background:color-mix(in oklab,currentColor 10%,transparent); }
+  .row button { min-width:5.5rem; }
+  .hint { max-width:38rem; }
+  button:disabled,input:disabled { opacity:.5; cursor:not-allowed; }
+  @media (max-width:420px) { main { gap:1.1rem; padding:1.4rem .8rem; } .pixel-orbit { --orbit-size:min(88vw,460px); } .preset-row { gap:.35rem; } .preset-row button { font-size:.68rem; } }
+  @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; } }
 </style>
 </head>
 <body>
@@ -47,13 +61,23 @@
   <h1>Pixel Orbit</h1>
   <!-- data-hour: "now"（本地时间）或 0–24；data-sync="root" 会把 --night 写到 <html>，让整个页面跟着变；data-autoplay="60" 表示 60 秒转一天 -->
   <div class="pixel-orbit" data-pixel-orbit data-hour="now" data-sync="root" aria-label="昼夜圆环开关"></div>
-  <output id="clock" aria-live="off"></output>
+  <output id="clock" aria-live="polite">正在初始化…</output>
+  <section class="time-panel" aria-label="时间控制">
+    <div class="time-head"><label for="time-range">TIME OF DAY</label><output id="time-value" for="time-range">12:00</output></div>
+    <input id="time-range" type="range" min="0" max="1439" step="1" value="720" aria-label="调整一天中的时间">
+  </section>
+  <div class="preset-row" aria-label="快速时间预设">
+    <button type="button" data-preset="6" aria-pressed="false">☀ 清晨</button>
+    <button type="button" data-preset="12" aria-pressed="false">☼ 正午</button>
+    <button type="button" data-preset="18" aria-pressed="false">◒ 黄昏</button>
+    <button type="button" data-preset="23" aria-pressed="false">☾ 深夜</button>
+  </div>
   <div class="row">
-    <button type="button" id="btn-day"><span>☀ 白天</span></button>
-    <button type="button" id="btn-night"><span>☾ 夜晚</span></button>
+    <button type="button" id="btn-day"><span>白天</span></button>
+    <button type="button" id="btn-night"><span>夜晚</span></button>
     <button type="button" id="btn-auto" aria-pressed="false"><span>⟳ 自动</span></button>
   </div>
-  <p class="hint">拖动圆环调整时间 · 点一下画面切换昼夜 · 键盘 ← → 微调，空格切换</p>
+  <p class="hint">拖动圆环或时间滑块调整时间 · 点击场景切换昼夜 · 键盘 ← → 微调，Shift 加速，空格切换</p>
   <noscript><p>需要 JavaScript 才能显示像素画面。</p></noscript>
 </main>
 
@@ -345,17 +369,54 @@
 })();
 </script>
 <script>
-  // ---------- 页面胶水代码：只用到组件的公开 API ----------
+  // ---------- 页面控制层：等待组件可用，避免 DOMContentLoaded 时序竞态 ----------
   (() => {
-    const el = document.querySelector('.pixel-orbit'); const ring = el.__pixelOrbit;
-    const clock = document.getElementById('clock');
-    const show = (d) => { clock.textContent = d.time + ' · ' + d.label; };
-    ring.onChange(show); const [t0, l0] = el.getAttribute('aria-valuetext').split(' · '); show({ time: t0, label: l0 });
-    document.getElementById('btn-day').onclick = () => ring.setHour(12);
-    document.getElementById('btn-night').onclick = () => ring.setHour(23);
-    const auto = document.getElementById('btn-auto');
-    auto.onclick = () => { const on = auto.getAttribute('aria-pressed') !== 'true'; auto.setAttribute('aria-pressed', on); ring.setAutoplay(on ? 48 : 0); };
-    // 组件还会在元素上触发 'orbitchange' 事件：el.addEventListener('orbitchange', e => console.log(e.detail))
+    const init = () => {
+      const el = document.querySelector('.pixel-orbit');
+      if (!el) return;
+      // 自动挂载通常由 DOMContentLoaded 完成；这里同步兜底，保证控制层永远拿到实例。
+      const ring = el.__pixelOrbit || window.PixelOrbit.mount(el);
+      const clock = document.getElementById('clock');
+      const timeRange = document.getElementById('time-range');
+      const timeValue = document.getElementById('time-value');
+      const auto = document.getElementById('btn-auto');
+      const presets = [...document.querySelectorAll('[data-preset]')];
+      let syncing = false;
+      const show = (d) => {
+        clock.textContent = d.time + ' · ' + d.label;
+        timeValue.textContent = d.time;
+        if (!syncing) timeRange.value = String(Math.round(d.hour * 60) % 1440);
+        presets.forEach((button) => {
+          const selected = Math.abs(Number(button.dataset.preset) - d.hour) < 0.03;
+          button.setAttribute('aria-pressed', String(selected));
+        });
+        document.getElementById('btn-day').setAttribute('aria-pressed', String(d.hour >= 6 && d.hour < 18));
+        document.getElementById('btn-night').setAttribute('aria-pressed', String(d.hour >= 18 || d.hour < 6));
+      };
+      ring.onChange(show);
+      const initial = el.getAttribute('aria-valuetext') || '12:00 · 白天';
+      const parts = initial.split(' · ');
+      show({time:parts[0],label:parts[1] || '白天',hour:ring.getHour()});
+      const set = (hour) => { ring.setAutoplay(0); auto.setAttribute('aria-pressed','false'); ring.setHour(hour); };
+      document.getElementById('btn-day').addEventListener('click', () => set(12));
+      document.getElementById('btn-night').addEventListener('click', () => set(23));
+      presets.forEach((button) => button.addEventListener('click', () => set(Number(button.dataset.preset))));
+      timeRange.addEventListener('input', () => {
+        syncing = true;
+        ring.setAutoplay(0);
+        auto.setAttribute('aria-pressed','false');
+        ring.setHour(Number(timeRange.value) / 60, false);
+        syncing = false;
+      });
+      auto.addEventListener('click', () => {
+        const on = auto.getAttribute('aria-pressed') !== 'true';
+        auto.setAttribute('aria-pressed', String(on));
+        ring.setAutoplay(on ? 48 : 0);
+      });
+      el.addEventListener('orbitchange', (event) => show(event.detail));
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});
+    else init();
   })();
 </script>
 </body>
