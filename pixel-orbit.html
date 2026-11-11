@@ -310,9 +310,10 @@
     const publish = () => {
       const h = mod(hour, 24); const ph = phaseOf(h); const n = nightOf(h);
       el.style.setProperty('--night', n.toFixed(3)); if (o.sync === 'root') document.documentElement.style.setProperty('--night', n.toFixed(3));
-      if (ph !== lastPhase || Math.abs(h - lastEmit) > 0.02) {
+      if (ph !== lastPhase || Math.abs(h - lastEmit) >= 1 / 120) {
         el.dataset.phase = ph; el.setAttribute('aria-valuenow', h.toFixed(2)); el.setAttribute('aria-valuetext', fmt(h) + ' · ' + PHASES[ph]);
-        if (ph !== lastPhase || Math.abs(h - lastEmit) > 0.25) { const detail = { hour: h, phase: ph, night: n > 0.5, nightAmount: n, label: PHASES[ph], time: fmt(h) }; el.dispatchEvent(new CustomEvent('orbitchange', { detail })); listeners.forEach((fn) => fn(detail)); lastEmit = h; }
+        // Publish at least once per displayed minute so the exact-time slider and public event API stay in sync.
+        if (ph !== lastPhase || Math.abs(h - lastEmit) >= 1 / 120) { const detail = { hour: h, phase: ph, night: n > 0.5, nightAmount: n, label: PHASES[ph], time: fmt(h) }; el.dispatchEvent(new CustomEvent('orbitchange', { detail })); listeners.forEach((fn) => fn(detail)); lastEmit = h; }
         lastPhase = ph;
       }
     };
