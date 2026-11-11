@@ -6,9 +6,9 @@
 > A tiny pixel-art world that moves with the time of day. / 一座随时间流动的像素小世界。
 
 <p align="center">
-  <a href="./pixel-orbit.html"><strong>▶ Play Pixel Orbit</strong></a>
+  <a href="https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html"><strong>▶ Play Pixel Orbit</strong></a>
   ·
-  <a href="./lab.html"><strong>⚙ Open the Lab</strong></a>
+  <a href="https://gsvegetable.github.io/-pixel-orbit/lab.html"><strong>⚙ Open the Lab</strong></a>
   ·
   <a href="#中文说明">中文</a>
   ·
@@ -32,8 +32,8 @@ Pixel Orbit 是一个无需依赖、无需构建步骤的像素昼夜互动作�
 
 ### 体验入口
 
-- **[在线试玩](./pixel-orbit.html)**：直接打开完整互动页面。
-- **[实验室 / 参数说明](./lab.html)**：查看控制方式、可调参数与开发接口。
+- **[在线试玩](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html)**：直接打开完整互动页面。
+- **[实验室 / 参数说明](https://gsvegetable.github.io/-pixel-orbit/lab.html)**：查看控制方式、可调参数与开发接口。
 - **[GitHub Pages 在线版](https://gsvegetable.github.io/-pixel-orbit/)**：启用 Pages 后可通过浏览器访问。
 
 ### 功能
@@ -101,8 +101,8 @@ Pixel Orbit is a dependency-free pixel-art day/night experience. Move through a 
 
 ### Try it
 
-- **[Play the experience](./pixel-orbit.html)** — open the interactive scene.
-- **[Open the Lab](./lab.html)** — explore controls, tunable settings and the developer API.
+- **[Play the experience](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html)** — open the interactive scene.
+- **[Open the Lab](https://gsvegetable.github.io/-pixel-orbit/lab.html)** — explore controls, tunable settings and the developer API.
 - **[Hosted demo](https://gsvegetable.github.io/-pixel-orbit/)** — available after GitHub Pages is enabled.
 
 ### Features
@@ -149,8 +149,8 @@ Pixel Orbit は、時刻に合わせて景色が変化する、依存ライブ�
 
 ### 体験する
 
-- **[オンラインで遊ぶ](./pixel-orbit.html)** — メインのインタラクティブ画面を開きます。
-- **[ラボ / 設定ガイド](./lab.html)** — 操作方法、調整できる項目、開発者向け API を確認できます。
+- **[オンラインで遊ぶ](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html)** — メインのインタラクティブ画面を開きます。
+- **[ラボ / 設定ガイド](https://gsvegetable.github.io/-pixel-orbit/lab.html)** — 操作方法、調整できる項目、開発者向け API を確認できます。
 - **[ホスト版デモ](https://gsvegetable.github.io/-pixel-orbit/)** — GitHub Pages の有効化後に利用できます。
 
 ### 主な機能
