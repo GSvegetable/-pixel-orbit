@@ -1,5 +1,8 @@
 # Pixel Orbit
 
+[![Quality checks](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml/badge.svg)](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
+
+
 > A tiny pixel-art world that moves with the time of day. / 一座随时间流动的像素小世界。
 
 <p align="center">
@@ -16,6 +19,8 @@
 
 **Online demo:** https://gsvegetable.github.io/-pixel-orbit/  
 **Lab:** https://gsvegetable.github.io/-pixel-orbit/lab.html
+
+**Quick navigation:** [体验作品](./pixel-orbit.html) · [参数实验室](./lab.html) · [开发说明](./docs/DEVELOPMENT.md) · [更新日志](./CHANGELOG.md) · [自动化检查](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
 
 > GitHub Pages must be enabled for the `main` branch (/`root`) before the online links become available. The links above are the intended Pages addresses; if they do not open yet, use the GitHub Pages setup instructions below or open the files directly from the repository.
 
@@ -186,10 +191,32 @@ Pixel Orbit は、時刻に合わせて景色が変化する、依存ライブ�
 
 ---
 
+## Project structure
+
+```text
+-pixel-orbit/
+├── .github/workflows/quality.yml  # GitHub Actions quality gate
+├── tests/smoke.mjs                # Dependency-free syntax and feature checks
+├── pixel-orbit.html               # Main interactive experience and renderer
+├── lab.html                       # Live playground and developer reference
+├── index.html                     # GitHub Pages entry point
+├── docs/DEVELOPMENT.md            # Architecture, lifecycle and test notes
+├── CHANGELOG.md                   # Project history
+└── README.md                      # English, 简体中文 and 日本語 project guide
+```
+
 ## Quality checks
 
-Run `node tests/smoke.mjs`. The smoke test parses the inline scripts, renders representative times and checks key controls and lifecycle features. GitHub Actions runs the checks on pushes and pull requests.
+Run the checks locally with Node.js 18 or newer (no package installation required):
+
+```bash
+node tests/smoke.mjs
+```
+
+The smoke suite parses every inline script, executes the real pixel renderer at representative times, checks non-empty and varied pixel output, and verifies key controls, localization, accessibility hooks, lifecycle cleanup, entry-point navigation and lab documentation. GitHub Actions runs the same checks on pushes and pull requests that touch the application, tests, documentation or workflow.
+
+For implementation notes, component lifecycle expectations and known testing boundaries, see [Development guide](./docs/DEVELOPMENT.md).
 
 ## License
 
-No license has been specified. Until a license is added, normal copyright applies; please ask the author before redistributing or reusing the artwork.
+No license has been specified. Copyright remains with the author; do not redistribute or reuse the artwork or source outside the permissions granted by the author.
