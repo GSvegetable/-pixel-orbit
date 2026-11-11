@@ -5,6 +5,11 @@ on:
     branches: [main]
     paths:
       - "pixel-orbit.html"
+      - "index.html"
+      - "lab.html"
+      - "README.md"
+      - "CHANGELOG.md"
+      - "docs/**"
       - "tests/**"
       - ".github/workflows/**"
   pull_request:
