@@ -4,7 +4,8 @@ This project is intentionally a small, dependency-free browser experience. It is
 
 ## Runtime map
 
-- `pixel-orbit.html` is the product page. It contains the pixel renderer, the interactive orbit component, and the page controller.
+- `pixel-orbit.html` is the primary countryside product page. It contains the pixel renderer, interactive orbit component, full control panel, localization and page controller.
+- `pixel-orbit-planet.html` is an independent alternate visual direction: a pixel-art globe with procedural terrain, clouds, day/night lighting, orbiting sun/moon and a deliberately compact control surface.
 - `index.html` is the GitHub Pages root entry. It redirects to the main experience and includes a normal anchor fallback.
 - `lab.html` embeds the live experience and documents the visible settings, CSS theme tokens, and public instance methods.
 - `tests/smoke.mjs` uses Node.js built-ins only. It parses inline JavaScript, executes the actual renderer in an isolated VM, and checks important UI and lifecycle contracts.
@@ -32,6 +33,7 @@ Call `destroy()` before removing a mounted element permanently. A destroyed elem
 ## Visual and interaction principles
 
 - Keep the 152 × 152 pixel renderer and its palette pipeline independent from surrounding page controls.
+- Treat the countryside and planet pages as two supported visual editions; do not overwrite one with the other or silently remove the primary page controls when iterating on the planet edition.
 - Keep pointer cancellation distinct from a completed click; a cancelled drag must not unexpectedly toggle the scene.
 - Preserve keyboard operation, visible focus, accessible names and reduced-motion behavior.
 - Keep time, palette, language and clock-format controls synchronized with their displayed state.
@@ -45,7 +47,7 @@ Use Node.js 18 or newer:
 node tests/smoke.mjs
 ```
 
-The suite checks JavaScript syntax, representative renderer output, expected controls and accessibility hooks, pointer-cancel handling, autoplay validation, cleanup behavior, localized settings, the root redirect, and the lab/README contract.
+The suite checks JavaScript syntax, representative renderer output for both visual editions, expected controls and accessibility hooks, pointer-cancel handling, autoplay validation, cleanup behavior, localized settings, the root redirect, and the lab/README contract.
 
 These are fast structural and renderer smoke checks, not a substitute for visual review in real browsers. Before changing layout, pointer interactions or responsive behavior, manually verify a narrow mobile viewport, a tablet/desktop viewport, keyboard-only use, and reduced-motion mode.
 
