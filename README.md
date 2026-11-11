@@ -10,7 +10,7 @@ A tiny, dependency-free pixel-art day/night dial. Drag the orbit to move through
 - A tactile 24-hour orbit dial with a sun/moon marker, tick marks and shaded bezel.
 - Time-of-day color transitions, stars, clouds, chimney smoke, birds, fireflies, house lights and directional shadows.
 - Direct time control: drag the dial, use the time slider, or choose dawn / noon / dusk / late night.
-- Day, night and auto-cycle controls. Auto mode runs through a full day in 48 seconds.
+- Day, night and auto-cycle controls, with adjustable full-day speed (12–180 seconds).\n- Four color moods: original countryside, misty coast, lavender dusk and warm amber.\n- Chinese, English and Japanese interface localization.\n- 12-hour / 24-hour clock display and one-tap synchronization to local time.\n- Preferences saved locally in the browser, with a reset action.\n- Built-in diagnostics for renderer, viewport, device-pixel ratio, reduced-motion preference and local storage.
 - Keyboard operation, visible focus, semantic slider values, and reduced-motion support.
 - Five CSS color tokens for theming; no external libraries, fonts, images or network requests.
 
@@ -30,7 +30,7 @@ Then visit `http://localhost:8080`.
 |---|---|
 | Drag the outer ring | Set the time continuously |
 | Click the scene or sun/moon knob | Switch between day and night |
-| Time slider | Set an exact minute |
+| Time slider | Set an exact minute |\n| Speed slider | Change the auto-cycle duration |\n| Color mood | Switch the five-color palette |\n| Language | Change Chinese / English / Japanese UI |\n| Clock format | Switch between 12-hour and 24-hour time |\n| Sync local time | Jump to the current device time |
 | Dawn / Noon / Dusk / Late night | Jump to a preset |
 | ← / → or ↑ / ↓ | Move by 30 minutes |
 | Shift + arrow | Move by 3 hours |
@@ -78,7 +78,7 @@ Designed for current Chromium, Firefox and Safari releases. The visual renderer 
 
 ## Development checks
 
-Run `node tests/smoke.mjs`. The check parses every inline JavaScript block and verifies key controls, accessibility hooks and component lifecycle safeguards. GitHub Actions runs it on pushes and pull requests.
+Run `node tests/smoke.mjs`. The check parses every inline JavaScript block, executes the pixel renderer at five time checkpoints, and verifies controls, localization, palette refresh, saved preferences and lifecycle safeguards. GitHub Actions runs it on pushes and pull requests.
 
 ## License
 
