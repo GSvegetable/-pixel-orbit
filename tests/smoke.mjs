@@ -34,4 +34,7 @@ assert.ok(html.includes('const ring = el.__pixelOrbit || window.PixelOrbit.mount
 assert.ok(html.includes("range.addEventListener('input'"), 'time slider must be interactive');
 assert.ok(html.includes("button.setAttribute('aria-pressed'"), 'preset pressed states must stay synchronized');
 
-assert.ok(html.includes("ring.setAutoplay(on?Number(prefs.speed):0)"), 'autoplay should use the saved speed preference');\nassert.ok(html.includes("document.documentElement.lang=prefs.language"), 'language changes must update the document language');\nassert.ok(html.includes("ring.refreshColors()"), 'palette changes must refresh the pixel renderer');\nconsole.log(`Pixel Orbit smoke checks passed (${scripts.length} inline scripts parsed).`);
+assert.ok(html.includes("ring.setAutoplay(on?Number(prefs.speed):0)"), 'autoplay should use the saved speed preference');
+assert.ok(html.includes("document.documentElement.lang=prefs.language"), 'language changes must update the document language');
+assert.ok(html.includes("ring.refreshColors()"), 'palette changes must refresh the pixel renderer');
+console.log(`Pixel Orbit smoke checks passed (${scripts.length} inline scripts parsed).`);
