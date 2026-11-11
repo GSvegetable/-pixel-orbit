@@ -48,7 +48,7 @@ for (const key of ['themeDefault', 'themeCoast', 'themeLavender', 'themeAmber', 
 assert.ok(html.includes("document.title=tr().pageTitle"), 'document title must follow the selected interface language');
 
 // The alternate planet edition must remain a real, independently renderable page.
-const planetScripts = [...planetHtml.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map((match) => match[1]);
+const planetScripts = [...planetHtml.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map((match) => match[1]);
 assert.ok(planetScripts.length >= 3, 'planet edition should contain renderer, interaction and page-controller scripts');
 planetScripts.forEach((source, index) => new Script(source, { filename: `planet-inline-script-${index + 1}.js` }));
 const planetSandbox = { window: {}, module: { exports: {} } };
@@ -81,7 +81,7 @@ for (const apiMethod of ['setHour(18)', 'setAutoplay(48)', 'getHour()', 'isNight
 
 const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
 assert.ok(readme.includes('actions/workflows/quality.yml/badge.svg'), 'README must expose the quality workflow badge');
-for (const relativePath of ['./pixel-orbit.html', './lab.html', './docs/DEVELOPMENT.md', './CHANGELOG.md']) {
+for (const relativePath of ['https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html', 'https://gsvegetable.github.io/-pixel-orbit/lab.html', './docs/DEVELOPMENT.md', './CHANGELOG.md']) {
   assert.ok(readme.includes(relativePath), `README navigation is missing: ${relativePath}`);
 }
 assert.ok(readme.includes('node tests/smoke.mjs'), 'README must document the executable local quality check');
