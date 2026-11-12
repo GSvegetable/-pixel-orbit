@@ -71,9 +71,16 @@ assert.ok(rootEntry.includes('url=./pixel-orbit.html'), 'root entry must provide
 assert.ok(rootEntry.includes("window.location.replace(new URL('./pixel-orbit.html'"), 'root entry must navigate to the main experience');
 
 const lab = readFileSync(new URL('../lab.html', import.meta.url), 'utf8');
-assert.ok(lab.includes('iframe src="./pixel-orbit.html"'), 'lab must embed the main live experience');
+const play = readFileSync(new URL('../play.html', import.meta.url), 'utf8');
+assert.ok(lab.includes('id="lab-preview" src="./pixel-orbit.html"'), 'lab must embed the full-control countryside editor');
+assert.ok(lab.includes("planet:'./pixel-orbit-planet.html'"), 'lab must switch to the full-control planet editor');
+assert.ok(play.includes("./pixel-orbit.html?display=1"), 'public player must load the clean countryside scene');
+assert.ok(play.includes("./pixel-orbit-planet.html?display=1"), 'public player must load the clean planet scene');
+assert.ok(play.includes('田园') && play.includes('星球'), 'public player must expose only the two scene choices');
+assert.ok(html.includes('display-mode main > :not(.pixel-orbit)'), 'countryside display mode must hide its parameter UI');
+assert.ok(planetHtml.includes('display-mode main > :not(.pixel-orbit)'), 'planet display mode must hide its parameter UI');
 assert.ok(lab.includes('pixel-orbit-planet.html'), 'lab must link to the alternate planet edition');
-assert.ok(lab.includes('title="Pixel Orbit interactive playground"'), 'lab iframe must have an accessible title');
+assert.ok(lab.includes('title="Pixel Orbit parameter laboratory"'), 'lab iframe must have an accessible title');
 assert.ok(lab.includes('loading="lazy"'), 'lab preview should defer loading until needed');
 for (const apiMethod of ['setHour(18)', 'setAutoplay(48)', 'getHour()', 'isNight()', 'refreshColors()', 'destroy()']) {
   assert.ok(lab.includes(apiMethod), `lab developer reference is missing API method: ${apiMethod}`);
@@ -81,7 +88,7 @@ for (const apiMethod of ['setHour(18)', 'setAutoplay(48)', 'getHour()', 'isNight
 
 const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
 assert.ok(readme.includes('actions/workflows/quality.yml/badge.svg'), 'README must expose the quality workflow badge');
-for (const relativePath of ['https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html', 'https://gsvegetable.github.io/-pixel-orbit/lab.html', './docs/DEVELOPMENT.md', './CHANGELOG.md']) {
+for (const relativePath of ['https://gsvegetable.github.io/-pixel-orbit/play.html','https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html', 'https://gsvegetable.github.io/-pixel-orbit/lab.html', './docs/DEVELOPMENT.md', './CHANGELOG.md']) {
   assert.ok(readme.includes(relativePath), `README navigation is missing: ${relativePath}`);
 }
 assert.ok(readme.includes('node tests/smoke.mjs'), 'README must document the executable local quality check');
