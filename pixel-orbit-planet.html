@@ -49,6 +49,16 @@ html.display-mode .pixel-orbit { --orbit-size:min(92vmin, 560px); }
   .pixel-orbit:active { cursor: grabbing; }
   .pixel-orbit:focus-visible { outline: 3px solid var(--orbit-accent); outline-offset: 8px; }
   .pixel-orbit canvas { display: block; image-rendering: pixelated; pointer-events: none; filter: drop-shadow(0 .9rem 1.4rem rgb(0 0 0 / .3)); }
+/* Focused editor layout for the laboratory shell. */
+html.lab-mode,html.lab-mode body{width:100%;min-height:100%;overflow-x:hidden}
+html.lab-mode body{min-height:100svh;align-items:center}
+html.lab-mode main{width:100%;max-width:1240px;min-height:100svh;margin:0 auto;padding:24px;gap:16px;grid-template-columns:minmax(280px,1fr) minmax(260px,360px);grid-template-areas:'art clock' 'art actions';align-items:center;justify-items:center}
+html.lab-mode main>h1,html.lab-mode main>.hint,html.lab-mode main>noscript{display:none!important}
+html.lab-mode main>.pixel-orbit{grid-area:art;--orbit-size:min(66vw,min(76svh,620px))}
+html.lab-mode main>#clock{grid-area:clock;align-self:end}
+html.lab-mode main>.row{grid-area:actions;align-self:start;flex-direction:column;width:100%;max-width:320px}
+html.lab-mode main>.row button{width:100%}
+@media(max-width:760px){html.lab-mode body{display:block}html.lab-mode main{min-height:100svh;padding:20px 16px;grid-template-columns:minmax(0,1fr);grid-template-areas:'art' 'clock' 'actions';gap:12px}html.lab-mode main>.pixel-orbit{--orbit-size:min(78vw,440px)}html.lab-mode main>.row{flex-direction:row;max-width:none}html.lab-mode main>.row button{flex:1}}
 </style>
 </head>
 <body>
@@ -363,6 +373,6 @@ html.display-mode .pixel-orbit { --orbit-size:min(92vmin, 560px); }
     // 组件还会在元素上触发 'orbitchange' 事件：el.addEventListener('orbitchange', e => console.log(e.detail))
   })();
 </script>
-<script>if(new URLSearchParams(location.search).get("display")==="1")document.documentElement.classList.add("display-mode");</script>
+<script>(()=>{const q=new URLSearchParams(location.search);if(q.get("display")==="1")document.documentElement.classList.add("display-mode");if(q.get("lab")==="1")document.documentElement.classList.add("lab-mode");})();</script>
 </body>
 </html>
