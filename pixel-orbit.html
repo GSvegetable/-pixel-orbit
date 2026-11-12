@@ -520,6 +520,15 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     if (event.source !== window.parent || !event.data || event.data.type !== "pixel-orbit-composition") return;
     setComposition(event.data.composition);
   });
+
+  // Wait until the browser has painted the artwork, not merely loaded the HTML.
+  const announceReady = () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      window.parent.postMessage({ type: "pixel-orbit-ready" }, "*");
+    }));
+  };
+  if (document.readyState === "complete") announceReady();
+  else window.addEventListener("load", announceReady, { once: true });
 })();
 </script>
 </body>
