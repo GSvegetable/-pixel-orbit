@@ -7,6 +7,33 @@
 <title>Pixel Orbit · 像素轨道开关</title>
 <style>
 
+/* Showcase: remove the full-viewport day/night fill and keep only a soft halo around the ring. */
+html.showcase-mode,
+html.showcase-mode body,
+html.showcase-mode main {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+html.showcase-mode body { position:relative; isolation:isolate; }
+html.showcase-mode body::before {
+  content:""; position:fixed; z-index:0; left:50%; top:50%;
+  width:min(105vmin,760px); aspect-ratio:1; transform:translate(-50%,-50%);
+  border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle,
+    color-mix(in oklab,#e8c77f 30%,#547cc5 calc(var(--night,0)*30%)) 0%,
+    color-mix(in oklab,#d9b66f 19%,#365b9c calc(var(--night,0)*22%)) 24%,
+    color-mix(in oklab,#d5b878 9%,#263e70 calc(var(--night,0)*12%)) 43%,
+    transparent 70%);
+  filter:blur(34px); opacity:.9; transition:opacity 700ms ease,filter 700ms ease;
+}
+html.showcase-mode main { position:relative; z-index:1; }
+html.showcase-mode .pixel-orbit { background:transparent !important; }
+html.showcase-mode .pixel-orbit canvas {
+  filter:drop-shadow(0 0 9px color-mix(in oklab,#f3d48f 34%,#6086d0 calc(var(--night,0)*38%)))
+        drop-shadow(0 0 25px color-mix(in oklab,#e5bd70 22%,#4268ad calc(var(--night,0)*24%)))
+        drop-shadow(0 12px 20px rgb(0 0 0 / .12));
+}
+
 /* Artwork showcase mode shared with the countryside version. */
 html.showcase-mode, html.showcase-mode body { width:100%; height:100%; min-height:100%; overflow:hidden; }
 html.showcase-mode body { display:grid; place-items:center; }
