@@ -297,7 +297,7 @@ html.showcase-art-mode .pixel-orbit {
 
     const render = (hour, t = 0, opts = {}) => {
       const calm = !!opts.calm;
-      const astro = opts.date instanceof Date ? solarEphemeris(opts.date) : null;
+      const astro = opts.date && typeof opts.date.getTime === 'function' ? solarEphemeris(opts.date) : null;
       const legacyHour = ((hour % 24) + 24) % 24;
       const hourAngle = astro ? Math.atan2(Math.sin(astro.gmst - astro.ra), Math.cos(astro.gmst - astro.ra)) : ((legacyHour - 12) / 24) * TAU;
       const solarUp = astro ? Math.cos(astro.dec) * Math.cos(hourAngle) : Math.cos(hourAngle);
@@ -477,7 +477,7 @@ html.showcase-art-mode .pixel-orbit {
       }
     };
     const draw = (t, simulationDate) => {
-      const astro = simulationDate instanceof Date ? solarEphemeris(simulationDate) : null;
+      const astro = simulationDate && typeof simulationDate.getTime === 'function' ? solarEphemeris(simulationDate) : null;
       const hourAngle = astro ? Math.atan2(Math.sin(astro.gmst - astro.ra), Math.cos(astro.gmst - astro.ra)) : ((hour % 24) / 24 - 0.5) * Math.PI * 2;
       const sx = Math.sin(hourAngle), sy = -Math.cos(hourAngle);
       const solarUp = astro ? Math.cos(astro.dec) * Math.cos(hourAngle) : Math.cos(hourAngle);
