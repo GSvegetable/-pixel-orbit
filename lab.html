@@ -3,63 +3,97 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#f2e8d2">
-<title>Pixel Orbit Lab</title>
+<meta name="theme-color" content="#11131b">
+<title>Pixel Orbit · 实验室</title>
 <style>
-:root{color-scheme:light dark;--bg:#f2e8d2;--fg:#1b2146;--line:rgba(27,33,70,.2);--accent:#efa02c}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-main{width:min(100% - 32px,920px);margin:0 auto;padding:34px 0 56px}
-header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:18px}
-.eyebrow{font-size:11px;letter-spacing:.2em;opacity:.6}h1{font-size:clamp(25px,5vw,42px);letter-spacing:.08em;margin:8px 0}p{margin:.5rem 0}.muted{opacity:.65}
-a{color:inherit;text-underline-offset:4px}.button{display:inline-block;padding:9px 13px;border:1px solid currentColor;text-decoration:none;box-shadow:3px 3px 0 currentColor}
-section{margin-top:28px}.preview{border:1px solid var(--line);background:#0c1030;overflow:hidden}
-iframe{display:block;width:100%;height:1050px;border:0;background:#0c1030}.row{display:flex;gap:8px;margin:12px 0}.row button[aria-pressed=true]{background:var(--fg);color:var(--bg)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-article{border:1px solid var(--line);padding:16px}h2{font-size:16px;letter-spacing:.08em}h3{font-size:13px;margin:0 0 8px}
-code{overflow-wrap:anywhere;background:rgba(127,127,127,.12);padding:2px 4px}
-table{width:100%;border-collapse:collapse;text-align:left}td,th{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:11px;opacity:.65}
-pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;border:1px solid var(--line);background:rgba(127,127,127,.08)}
-footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);font-size:11px;opacity:.55}
-@media(max-width:560px){iframe{height:900px}main{padding-top:22px}td,th{font-size:12px}}
+:root{color-scheme:dark;--bg:#11131b;--panel:#191c27;--line:rgba(238,232,217,.12);--ink:#f2ead8;--muted:#a6a9b5;--accent:#f0a32c}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#292b3a 0%,var(--bg) 55%);color:var(--ink);font:14px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;cursor:pointer}
+.shell{width:min(1440px,100% - 40px);margin:0 auto;padding:26px 0 52px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px}.mark{width:36px;height:36px;border:1px solid rgba(240,163,44,.55);border-radius:12px;display:grid;place-items:center;color:var(--accent);font-size:19px}
+.brand-name{font-size:13px;font-weight:750;letter-spacing:.16em}.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.08em}
+.top-links{display:flex;gap:18px;color:var(--muted);font-size:12px}.top-links a:hover{color:var(--ink)}
+.intro{display:flex;justify-content:space-between;align-items:end;gap:24px;padding:34px 0 22px}
+.kicker{color:var(--accent);font-size:10px;letter-spacing:.2em;font-weight:700}
+h1{font-size:clamp(28px,4vw,42px);line-height:1.1;letter-spacing:-.04em;margin:8px 0}.lede{margin:0;color:var(--muted);font-size:13px;max-width:600px}
+.live-pill{white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:7px 11px;color:#b9d5b0;font-size:11px}
+.workspace{border:1px solid var(--line);border-radius:18px;background:rgba(25,28,39,.88);overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.22)}
+.workspace-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.workspace-label{font-size:10px;letter-spacing:.16em;color:var(--muted);font-weight:700}
+.scene-tabs{display:flex;gap:5px;padding:4px;border:1px solid var(--line);border-radius:11px;background:#11141d}
+.scene-tab{border:0;background:transparent;color:var(--muted);padding:8px 15px;border-radius:8px;font-size:12px;transition:background .18s,color .18s}
+.scene-tab[aria-pressed=true]{background:#343747;color:var(--ink);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}.scene-tab:hover{color:var(--ink)}
+.stage{position:relative;background:#10121b;min-height:680px}.stage iframe{display:block;width:100%;height:760px;border:0;background:transparent}
+.stage-note{position:absolute;bottom:12px;left:16px;color:rgba(242,234,216,.34);font-size:9px;letter-spacing:.12em;pointer-events:none}
+.info-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:16px}
+.info-card{border:1px solid var(--line);border-radius:14px;background:rgba(25,28,39,.72);padding:18px}.info-card h2{font-size:12px;letter-spacing:.12em;margin:0 0 12px}.info-card p{font-size:12px;color:var(--muted);margin:0}
+.parameter-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.parameter{padding:10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02)}.parameter strong{display:block;font-size:11px;margin-bottom:3px}.parameter span{font-size:10px;color:var(--muted)}
+details.reference{margin-top:14px;border:1px solid var(--line);border-radius:14px;background:rgba(25,28,39,.55);overflow:hidden}
+details.reference summary{cursor:pointer;padding:16px 18px;font-size:12px;font-weight:650;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.reference summary::-webkit-details-marker{display:none}details.reference summary:after{content:"＋";color:var(--accent);font-size:16px}details.reference[open] summary:after{content:"−"}
+.reference-body{padding:0 18px 18px;border-top:1px solid var(--line)}.reference-body p{color:var(--muted);font-size:12px}
+pre{overflow:auto;padding:14px;border-radius:10px;background:#0e1119;border:1px solid var(--line);color:#d8d5cb;font:11px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace}
+.token-row{display:flex;gap:8px;flex-wrap:wrap}.swatch{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--muted)}.dot{width:13px;height:13px;border-radius:4px;border:1px solid rgba(255,255,255,.2)}
+footer{display:flex;justify-content:space-between;gap:16px;margin-top:24px;color:#777b88;font-size:10px}
+@media(max-width:760px){.shell{width:min(100% - 24px,640px);padding-top:14px}.topbar{align-items:flex-start}.top-links{gap:12px}.intro{padding:24px 0 16px;align-items:flex-start;flex-direction:column;gap:12px}.workspace-head{align-items:flex-start;flex-direction:column}.stage{min-height:720px}.stage iframe{height:900px}.info-grid{grid-template-columns:1fr}.parameter-list{grid-template-columns:repeat(2,minmax(0,1fr))}footer{flex-direction:column}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
-<main>
-<header><div><div class="eyebrow">PIXEL ORBIT / EXPERIMENTAL SPACE</div><h1>THE LAB</h1><p class="muted">调试、体验与参数参考 · 完整参数实验区：时间、主题、速度与显示设置都在这里调整。</p></div><nav style="display:flex;gap:10px;flex-wrap:wrap"><a class="button" href="https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html">田园主版本 ↗</a><a class="button" href="https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html">星球视觉版 ↗</a></nav></header>
-<section><h2>LIVE CONTROL ROOM / 交互与参数</h2><p class="muted">在这里切换两个版本，并完整调整各自的时间、色彩、流速和显示设置。公开试玩页只保留场景本身。</p><div class="row" role="group" aria-label="选择实验场景"><button class="button" type="button" data-lab-scene="countryside" aria-pressed="true">田园版本</button><button class="button" type="button" data-lab-scene="planet" aria-pressed="false">星球版本</button></div><div class="preview"><iframe id="lab-preview" src="./pixel-orbit.html" title="Pixel Orbit parameter laboratory" loading="lazy"></iframe></div></section>
-<section><h2>TWO VISUAL DIRECTIONS / 两种视觉效果</h2><div class="grid"><article><h3>COUNTRYSIDE / 田园版</h3><p>完整控制面板、四种主题、三种语言、精确时间滑块与偏好保存，作为主体验。</p><p><a href="https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html">打开田园主版本 ↗</a></p></article><article><h3>PLANET / 星球版</h3><p>球面地形、云层、晨昏线、城市灯火、流星和轨道日月，作为独立的第二种视觉演绎。</p><p><a href="https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html">打开星球视觉版 ↗</a></p></article></div></section>\n<section><h2>ADJUSTABLE PARAMETERS / 可调参数</h2><div class="grid">
-<article><h3>TIME / 时间</h3><p>00:00–23:59。拖动轨道或使用时间滑块，观察场景光照变化。</p></article>
-<article><h3>AUTO CYCLE / 自动循环</h3><p>12–180 秒 / 天。数值越小，虚拟的一天流逝越快。</p></article>
-<article><h3>COLOR MOOD / 色彩氛围</h3><p>原始田园、海岸薄雾、薰衣草暮色、琥珀暖光。</p></article>
-<article><h3>LANGUAGE / 界面语言</h3><p>简体中文、English、日本語。</p></article>
-<article><h3>CLOCK / 时间格式</h3><p>12 小时制或 24 小时制，也可同步设备本地时间。</p></article>
-<article><h3>PREFERENCES / 偏好设置</h3><p>速度、主题、语言与时间格式保存在当前浏览器；重置按钮可恢复默认值。</p></article>
-</div></section>
-<section><h2>THEME TOKENS / 主题色参数</h2><p>在 <code>.pixel-orbit</code> 上覆盖以下五个 CSS 变量，即可制作自己的主题：</p><pre><code>.pixel-orbit {
+<div class="shell">
+<header class="topbar">
+  <a class="brand" href="./play.html" aria-label="返回 Pixel Orbit 试玩"><span class="mark">◉</span><span><span class="brand-name">PIXEL ORBIT</span><br><span class="brand-sub">CREATIVE LAB</span></span></a>
+  <nav class="top-links" aria-label="快捷导航"><a href="./play.html">在线试玩 ↗</a><a href="https://github.com/GSvegetable/-pixel-orbit">GitHub ↗</a></nav>
+</header>
+<section class="intro">
+  <div><div class="kicker">INTERACTIVE WORKSPACE / 01</div><h1>参数实验室</h1><p class="lede">在同一个工作台里观察两种视觉版本，调整时间、昼夜、配色与动画速度。画面变化会直接反映在预览中。</p></div>
+  <span class="live-pill">● 实时交互 · 本地保存</span>
+</section>
+<section class="workspace" aria-label="Pixel Orbit 实验工作台">
+  <div class="workspace-head"><span class="workspace-label">LIVE PREVIEW / EDITOR</span>
+    <div class="scene-tabs" role="group" aria-label="切换实验版本">
+      <button class="scene-tab" type="button" data-lab-scene="countryside" aria-pressed="true">田园世界</button>
+      <button class="scene-tab" type="button" data-lab-scene="planet" aria-pressed="false">星球世界</button>
+    </div>
+  </div>
+  <div class="stage"><iframe id="lab-preview" src="./pixel-orbit.html?lab=1" title="Pixel Orbit parameter laboratory" loading="eager"></iframe><span class="stage-note">DRAG THE ORBIT · CHANGE THE TIME</span></div>
+</section>
+<div class="info-grid">
+  <section class="info-card"><h2>可调参数</h2><div class="parameter-list">
+    <div class="parameter"><strong>时间</strong><span>00:00 — 23:59</span></div><div class="parameter"><strong>昼夜模式</strong><span>白天 / 夜晚 / 自动</span></div><div class="parameter"><strong>动画速度</strong><span>12 — 180 秒 / 天</span></div>
+    <div class="parameter"><strong>色彩主题</strong><span>4 组预设色彩</span></div><div class="parameter"><strong>语言</strong><span>中文 / English / 日本語</span></div><div class="parameter"><strong>时间格式</strong><span>12 / 24 小时制</span></div>
+  </div></section>
+  <section class="info-card"><h2>实验方式</h2><p>拖动圆环或使用控制面板改变时间；选择主题观察像素场景的色彩变化。星球版本提供昼夜切换与自动循环。各版本的偏好设置保存在当前浏览器中。</p></section>
+</div>
+<details class="reference"><summary>开发者参考 · 主题变量与公开 API</summary><div class="reference-body">
+  <p>覆盖组件的 CSS 自定义属性即可制作配色方案；运行时修改后调用 refreshColors() 更新画面。</p>
+  <div class="token-row"><span class="swatch"><i class="dot" style="background:#f5ecd9"></i>背景</span><span class="swatch"><i class="dot" style="background:#8c9a62"></i>表面</span><span class="swatch"><i class="dot" style="background:#1b2146"></i>前景</span><span class="swatch"><i class="dot" style="background:#7f97b3"></i>雾蓝</span><span class="swatch"><i class="dot" style="background:#efa02c"></i>强调</span></div>
+  <pre>.pixel-orbit {
   --orbit-bg: #f5ecd9;
   --orbit-surface: #8c9a62;
   --orbit-fg: #1b2146;
   --orbit-muted: #7f97b3;
   --orbit-accent: #efa02c;
-}</code></pre><p class="muted">运行时修改变量后，调用挂载实例的 <code>refreshColors()</code> 刷新画面配色。</p></section>
-<section><h2>DEVELOPER API / 开发接口</h2><pre><code>const orbit = window.PixelOrbit.mount(
-  document.querySelector('.pixel-orbit')
-);
-
-orbit.setHour(18);       // 设置为 18:00
-orbit.setAutoplay(48);   // 48 秒走完一天
-orbit.toggle();          // 切换昼夜
-orbit.getHour();         // 读取当前小时
-orbit.isNight();         // 是否为夜晚
-orbit.refreshColors();   // 刷新配色
-orbit.destroy();         // 卸载实例</code></pre></section>
-<footer>PIXEL ORBIT LAB · A LITTLE WORLD IN MOTION · <a href="https://github.com/GSvegetable/-pixel-orbit#readme">README</a> · <a href="https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html">PLAY</a></footer>
-</main>
+}</pre>
+  <pre>const orbit = window.PixelOrbit.mount(document.querySelector('.pixel-orbit'));
+orbit.setHour(18);
+orbit.setAutoplay(48);
+orbit.toggle();
+orbit.getHour();
+orbit.isNight();
+orbit.refreshColors();
+orbit.destroy();</pre>
+</div></details>
+<footer><span>PIXEL ORBIT LAB · A LITTLE WORLD IN MOTION</span><span><a href="./README.md">README</a> · <a href="./docs/DEVELOPMENT.md">开发文档</a></span></footer>
+</div>
 <script>
 (() => {
  const frame=document.getElementById('lab-preview');
  const buttons=[...document.querySelectorAll('[data-lab-scene]')];
- const sources={countryside:'./pixel-orbit.html',planet:'./pixel-orbit-planet.html'};
+ const sources={countryside:'./pixel-orbit.html?lab=1',planet:'./pixel-orbit-planet.html?lab=1'};
  buttons.forEach(button=>button.addEventListener('click',()=>{
    const scene=button.dataset.labScene;
    if(frame.getAttribute('src')!==sources[scene])frame.src=sources[scene];
