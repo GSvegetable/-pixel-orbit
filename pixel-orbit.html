@@ -478,7 +478,14 @@ html.showcase-art-mode .pixel-orbit {
   const mount = (el, opts = {}) => {
     const ds = el.dataset;
     const o = { hour: opts.hour ?? ds.hour ?? 'now', autoplay: Number(opts.autoplay ?? ds.autoplay ?? 0), sync: opts.sync ?? ds.sync ?? '', label: opts.label ?? el.getAttribute('aria-label') ?? '昼夜轨道开关' };
-    const canvas = document.createElement('canvas'); canvas.width = N; canvas.height = N; canvas.setAttribute('aria-hidden', 'true'); el.appendChild(canvas);
+    const glowCanvas = document.createElement('canvas');
+    glowCanvas.width = glowCanvas.height = N * 2;
+    glowCanvas.setAttribute('aria-hidden', 'true');
+    glowCanvas.style.cssText = 'position:absolute;z-index:0;pointer-events:none;width:200%;height:200%;left:-50%;top:-50%;';
+    el.style.position = 'relative'; el.style.isolation = 'isolate';
+    el.appendChild(glowCanvas);
+    const glowCtx = glowCanvas.getContext('2d');
+    const canvas = document.createElement('canvas'); canvas.width = N; canvas.height = N; canvas.style.position='relative'; canvas.style.zIndex='1'; canvas.setAttribute('aria-hidden', 'true'); el.appendChild(canvas);
     const ctx = canvas.getContext('2d'); const img = ctx.createImageData(N, N); const u32 = new Uint32Array(img.data.buffer);
     let renderer = PO.createRenderer(readColors(el));
     el.setAttribute('role', 'slider'); el.setAttribute('aria-label', o.label); el.setAttribute('aria-valuemin', '0'); el.setAttribute('aria-valuemax', '24'); if (!el.hasAttribute('tabindex')) el.tabIndex = 0;
@@ -506,6 +513,28 @@ html.showcase-art-mode .pixel-orbit {
       }
     };
     const draw = (t) => {
+      const hh = ((hour % 24) + 24) % 24;
+      const angle = ((hh - 12) / 24) * Math.PI * 2;
+      const sunX = 2 * (76 + Math.sin(angle) * 58);
+      const sunY = 2 * (76 - Math.cos(angle) * 58);
+      const isNight = hh >= 18.5 || hh < 5.5;
+      glowCtx.clearRect(0, 0, N * 2, N * 2);
+      const gx = isNight ? N * 2 - sunX : sunX;
+      const gy = isNight ? N * 2 - sunY : sunY;
+      const glow = glowCtx.createRadialGradient(gx, gy, 2, gx, gy, 118);
+      if (isNight) {
+        glow.addColorStop(0, 'rgba(126,178,255,.52)');
+        glow.addColorStop(.28, 'rgba(105,158,244,.29)');
+        glow.addColorStop(.62, 'rgba(91,143,225,.12)');
+      } else {
+        glow.addColorStop(0, 'rgba(255,196,91,.58)');
+        glow.addColorStop(.28, 'rgba(255,181,72,.34)');
+        glow.addColorStop(.62, 'rgba(255,166,64,.13)');
+      }
+      glow.addColorStop(1, 'rgba(255,255,255,0)');
+      glowCtx.fillStyle = glow;
+      glowCtx.fillRect(0, 0, N * 2, N * 2);
+      u32.set(renderer.render(hour, t, { calm }));
       u32.set(renderer.render(hour, t, { calm }));
       /* Keep the scene inside the circular orbit, but discard the square canvas corners.
          This preserves the live day/night artwork while allowing the outer halo to show. */
