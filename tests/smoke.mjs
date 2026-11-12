@@ -27,7 +27,7 @@ for (const feature of [
   'data-preset="18"', 'data-preset="23"', 'btn-auto',
   'prefers-reduced-motion', 'ResizeObserver', 'IntersectionObserver',
   'orbitchange', 'aria-valuetext', 'refreshColors', 'destroy()',
-  'window.PixelOrbit.mount(el)', 'Math.abs(h - lastEmit) >= 1 / 120', 'setRealTimeSync(enabled)', 'isRealTimeSync: () => realTimeSync'
+  'window.PixelOrbit.mount(el)', 'Math.abs(h - lastEmit) >= 1 / 120'
 ]) assert.ok(html.includes(feature), `missing expected feature: ${feature}`);
 
 assert.ok(html.includes('const ring=el.__pixelOrbit||window.PixelOrbit.mount(el)'),
@@ -62,33 +62,9 @@ for (const hour of [0, 6, 12, 18, 23]) {
   assert.ok(Array.from(pixels).some((pixel) => pixel !== 0), `planet scene should not be blank at ${hour}:00`);
   assert.ok(new Set(pixels).size > 10, `planet scene should contain a useful palette at ${hour}:00`);
 }
-
-// The astronomical mode must depend on the absolute instant, not the visitor's timezone,
-// and seasonal solar declination must alter the terminator.
-const renderPlanetAt = (instant) => Array.from(planetRenderer.render(12, 0, { calm: true, date: new Date(instant) }));
-const sameInstantUtc = renderPlanetAt('2026-06-21T12:00:00Z');
-const sameInstantOffset = renderPlanetAt('2026-06-21T08:00:00-04:00');
-assert.deepEqual(sameInstantUtc, sameInstantOffset,
-  'the same absolute instant must produce the same global sunlight in every timezone');
-const equinoxPixels = renderPlanetAt('2026-03-20T12:00:00Z');
-assert.notDeepEqual(equinoxPixels, sameInstantUtc,
-  'seasonal solar declination must change the illuminated globe');
-const sixHoursLater = renderPlanetAt('2026-06-21T18:00:00Z');
-assert.notDeepEqual(sameInstantUtc, sixHoursLater,
-  'Earth rotation must move the geographic day/night boundary over time');
-assert.ok(planetHtml.includes('solarEphemeris') && planetHtml.includes('astro.gmst') && planetHtml.includes('astro.dec'),
-  'planet edition must use solar coordinates, sidereal rotation and seasonal declination');
-assert.ok(planetHtml.includes('draw(ts / 1000, simulationDate)'),
-  'real-time and accelerated modes must pass their simulated absolute date to the renderer');
-assert.ok(planetHtml.includes('realTimeSync ? 1000 / 12 : o.autoplay > 0 ? 1000 / 15 : 1000 / 20'),
-  'planet rendering must be frame-throttled to keep mobile interaction responsive');
 assert.ok(planetHtml.includes("e.type !== 'pointercancel'"), 'planet edition pointer cancellation must not toggle the scene');
 assert.ok(planetHtml.includes('Number.isFinite(seconds) && seconds > 0'), 'planet autoplay API must reject invalid durations');
 assert.ok(planetHtml.includes('if (el.__pixelOrbit === api) delete el.__pixelOrbit'), 'planet destroy must release the mount marker');
-assert.ok(planetHtml.includes('setRealTimeSync(enabled)'), 'planet edition must expose real-time synchronization');
-assert.ok(planetHtml.includes("const ring = orbitEl.__pixelOrbit || window.PixelOrbit.mount(orbitEl)"), 'planet page controller must mount synchronously when DOMContentLoaded has not fired');
-assert.ok(planetHtml.includes("query.get('display') === '1'"), 'planet display mode must follow local real time');
-assert.ok(html.includes("query.get('display') === '1'"), 'countryside display mode must follow local real time');
 
 const rootEntry = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 assert.ok(rootEntry.includes('url=./play.html'), 'root entry must provide a no-JavaScript fallback redirect');

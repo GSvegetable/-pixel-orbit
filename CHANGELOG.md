@@ -17,34 +17,7 @@ Pixel Orbit 的独立项目版本记录。网站作品集中的嵌入展示与�
 - Pixel Orbit quality workflow passed for the showcase integration changes.
 - Browser-level visual acceptance on the hosted site remains a separate deployment check.
 
-## v1.2.1 — 2026-11-12
-
-### Fixed
-- 限制星球版持续软件渲染的帧率：现实时间模式最高 12 FPS、自动漫游最高 15 FPS、手动交互最高 20 FPS，减少移动设备主线程持续占用，给触摸与点击事件留出响应时间。
-- 仅调整星球版渲染调度，田园版渲染器保持不变。
-
-### Validation
-- 增加自动化断言，确保星球版实时、自动和手动模式均使用分级帧率上限。
-- GitHub Actions 质量检查与 Pages 部署结果以本次提交后的工作流状态为准。
-
-## v1.2.0 — 2026-11-12
-
-### Added
-- 星球版加入基于 UTC 的太阳天文位置计算，使用太阳赤经、赤纬与格林尼治恒星时确定全球一致的受光方向。
-- 根据地球恒星自转角更新球面纹理，并通过太阳赤纬呈现地轴倾斜带来的季节性昼夜分布。
-- 现实时间模式按真实时间运行；手动调节与自动漫游继续可用，自动漫游会加速推进模拟日期。
-
-### Changed
-- 保留原有像素渲染、轨道拖动、昼夜控制与作品集展示结构。
-- 星球版的外部光晕与球面照明使用同一套天文太阳方向。
-
-### Notes
-- 星球地形仍为程序生成的艺术化像素纹理，不是具有真实国界和地名的地理底图；天文光照模型不等于地理地图定位。
-- 太阳位置采用适合视觉模拟的低阶天文算法，并非高精度天文台/导航级星历。
-
 ## Unreleased
-
-- Added continuous local real-time synchronization for both countryside and planet scenes; showcase/display embeds follow the device clock automatically, while the editor retains a manual toggle.
 
 - Prevented pointer-cancel gestures from being interpreted as clicks.
 - Made component teardown complete: fallback resize listeners are removed and destroyed instances can be mounted again.

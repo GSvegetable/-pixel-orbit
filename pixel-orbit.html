@@ -254,7 +254,7 @@ html.showcase-art-mode .pixel-orbit {
       <div class="setting"><label for="clock-mode" data-i18n="clockMode">时间显示</label><select id="clock-mode"><option value="24" data-i18n="clock24">24 小时</option><option value="12" data-i18n="clock12">12 小时</option></select></div>
     </div>
     <div class="secondary-row">
-      <button type="button" class="text-button" id="btn-now" data-i18n="syncNow" aria-pressed="false">◷ 现实时间同步</button>
+      <button type="button" class="text-button" id="btn-now" data-i18n="syncNow">↺ 回到本地当前时间</button>
       <button type="button" class="text-button" id="btn-reset" data-i18n="reset">恢复默认设置</button>
     </div>
     <div class="status"><span class="status-dot"></span><span id="status-text">运行正常 · 设置自动保存</span></div>
@@ -498,13 +498,12 @@ html.showcase-art-mode .pixel-orbit {
     let calm = motionQ.matches; const onMotion = () => { calm = motionQ.matches; wake(); }; if (motionQ.addEventListener) motionQ.addEventListener('change', onMotion);
 
     const now = new Date(); let hour = o.hour === 'now' ? now.getHours() + now.getMinutes() / 60 : Number(o.hour); if (!Number.isFinite(hour)) hour = 12; let target = hour; let rate = 3.2;
-    const query = new URLSearchParams(location.search); let realTimeSync = ds.realtime === 'true' || (query.get('showcase') === '1' || query.get('display') === '1');
     let drag = null; let raf = 0; let lastTs = 0; let lastDraw = 0; let visible = true; let lastPhase = ''; let lastEmit = -99; let ro = null; let io = null; let dead = false; const listeners = new Set();
 
     const unwrap = (h, ref) => h + 24 * Math.round((ref - h) / 24);
     const aheadOf = (dest, ref) => { let t = dest + 24 * Math.floor(ref / 24); if (t <= ref + 0.01) t += 24; return t; };
-    const toggle = () => { realTimeSync = false; const h = mod(target, 24); target = aheadOf(h >= 6 && h < 18 ? 23 : 12, target); rate = 3.2; wake(); };
-    const setHour = (h, animate = true) => { realTimeSync = false; target = unwrap(mod(h, 24), target); if (!animate || calm) hour = target; rate = 3.2; wake(); };
+    const toggle = () => { const h = mod(target, 24); target = aheadOf(h >= 6 && h < 18 ? 23 : 12, target); rate = 3.2; wake(); };
+    const setHour = (h, animate = true) => { target = unwrap(mod(h, 24), target); if (!animate || calm) hour = target; rate = 3.2; wake(); };
     const pointerTo = (e) => { const r = canvas.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * N - CX, ((e.clientY - r.top) / r.height) * N - CY]; };
     const hourAt = (dx, dy, moon) => mod(12 + (Math.atan2(dx, -dy) / TAU) * 24 + (moon ? 12 : 0), 24);
 
@@ -574,17 +573,15 @@ html.showcase-art-mode .pixel-orbit {
 
     const frame = (ts) => {
       raf = 0; if (dead) return; const dt = Math.min(0.1, (ts - lastTs) / 1000 || 0.016); lastTs = ts;
-      if (realTimeSync) { const now = new Date(); hour = target = now.getHours() + now.getMinutes() / 60 + (now.getSeconds() + now.getMilliseconds() / 1000) / 3600; }
-      else if (o.autoplay > 0 && !drag) { target += (dt * 24) / o.autoplay; hour = target; }
+      if (o.autoplay > 0 && !drag) { target += (dt * 24) / o.autoplay; hour = target; }
       else { const d = target - hour; if (calm || Math.abs(d) < 0.0006) hour = target; else hour += d * (1 - Math.exp(-rate * dt)); }
-      const moving = realTimeSync || Math.abs(target - hour) > 0.0006 || o.autoplay > 0 || !!drag;
+      const moving = Math.abs(target - hour) > 0.0006 || o.autoplay > 0 || !!drag;
       if (moving || ts - lastDraw > 33) { draw(ts / 1000); lastDraw = ts; publish(); }
       if (visible && !document.hidden && (!calm || moving)) raf = requestAnimationFrame(frame);
     };
     function wake() { if (!raf && !dead) { lastTs = performance.now(); raf = requestAnimationFrame(frame); } }
 
     const down = (e) => {
-      realTimeSync = false;
       if (e.button !== undefined && e.button !== 0) return; const [dx, dy] = pointerTo(e); const r = Math.hypot(dx, dy); if (r > 76) return;
       const sun = ((hour - 12) / 24) * TAU; const sx = Math.sin(sun) * BEAD_R, sy = -Math.cos(sun) * BEAD_R;
       const onKnob = Math.hypot(dx - sx, dy - sy) < 9;
@@ -603,7 +600,7 @@ html.showcase-art-mode .pixel-orbit {
       if (e.key === 'ArrowRight' || e.key === 'ArrowUp') target += big; else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') target -= big;
       else if (e.key === 'PageUp') target += 3; else if (e.key === 'PageDown') target -= 3; else if (e.key === 'Home') target = aheadOf(12, target - 0.02); else if (e.key === 'End') target = aheadOf(24, target - 0.02);
       else if (e.key === ' ' || e.key === 'Enter') toggle(); else used = false;
-      if (used) { realTimeSync = false; rate = 8; e.preventDefault(); wake(); }
+      if (used) { rate = 8; e.preventDefault(); wake(); }
     };
     el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('keydown', key);
     if (window.ResizeObserver) { ro = new ResizeObserver(fit); ro.observe(el); } else window.addEventListener('resize', fit);
@@ -612,9 +609,7 @@ html.showcase-art-mode .pixel-orbit {
     fit(); draw(0); publish(); wake();
 
     const api = {
-      el, setHour, toggle, getHour: () => mod(hour, 24), isNight: () => nightOf(hour) > 0.5, isRealTimeSync: () => realTimeSync,
-      setRealTimeSync(enabled) { realTimeSync = !!enabled; if (realTimeSync) { o.autoplay = 0; const now = new Date(); hour = target = now.getHours() + now.getMinutes() / 60 + (now.getSeconds() + now.getMilliseconds() / 1000) / 3600; } wake(); return realTimeSync; },
-      setAutoplay(s) { realTimeSync = false; const seconds = Number(s); o.autoplay = Number.isFinite(seconds) && seconds > 0 ? Math.max(1, seconds) : 0; wake(); },
+      el, setHour, toggle, getHour: () => mod(hour, 24), isNight: () => nightOf(hour) > 0.5, setAutoplay(s) { const seconds = Number(s); o.autoplay = Number.isFinite(seconds) && seconds > 0 ? Math.max(1, seconds) : 0; wake(); },
       refreshColors() { renderer = PO.createRenderer(readColors(el)); draw(performance.now() / 1000); }, onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
       destroy() { dead = true; cancelAnimationFrame(raf); el.removeEventListener('pointerdown', down); el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); el.removeEventListener('keydown', key); document.removeEventListener('visibilitychange', onVis); if (ro) ro.disconnect(); else window.removeEventListener('resize', fit); if (io) io.disconnect(); if (motionQ.removeEventListener) motionQ.removeEventListener('change', onMotion); canvas.remove(); listeners.clear(); if (el.__pixelOrbit === api) delete el.__pixelOrbit; if (o.sync === 'root') document.documentElement.style.removeProperty('--night'); },
     };
@@ -632,35 +627,35 @@ const init=()=>{
  const el=document.querySelector('.pixel-orbit'); if(!el||el.dataset.uiReady)return; el.dataset.uiReady='1';
  const ring=el.__pixelOrbit||window.PixelOrbit.mount(el),$=id=>document.getElementById(id);
  const clock=$('clock'),phase=$('phase'),range=$('time-range'),timeValue=$('time-value'),auto=$('btn-auto'),speed=$('speed-range'),speedValue=$('speed-value'),theme=$('theme-select'),language=$('language-select'),clockMode=$('clock-mode'),presets=[...document.querySelectorAll('[data-preset]')];
- const defaults={speed:48,theme:'default',language:'zh-CN',clockMode:'24',realTimeSync:false};
+ const defaults={speed:48,theme:'default',language:'zh-CN',clockMode:'24'};
  const palettes={
  default:{bg:'#f5ecd9',surface:'#8c9a62',fg:'#1b2146',muted:'#7f97b3',accent:'#efa02c'},
  coast:{bg:'#dce9e5',surface:'#648f91',fg:'#193b50',muted:'#8aabb5',accent:'#e6b978'},
  lavender:{bg:'#e9e0ef',surface:'#83769d',fg:'#302a50',muted:'#9a9ab9',accent:'#d8a0b5'},
  amber:{bg:'#f1dfc4',surface:'#a77b45',fg:'#402b25',muted:'#b18b70',accent:'#e3a13c'}};
  const dict={
- 'zh-CN':{pageTitle:'Pixel Orbit · 像素轨道',orbitLabel:'昼夜轨道控制',rangeLabel:'调整一天中的时间',themeDefault:'原始田园',themeCoast:'海岸薄雾',themeLavender:'薰衣草暮色',themeAmber:'琥珀暖光',clock24:'24 小时',clock12:'12 小时',subtitle:'一座随时间呼吸的像素小世界',timeOfDay:'一天中的时间',dawn:'☀ 清晨',noon:'☼ 正午',dusk:'◒ 黄昏',lateNight:'☾ 深夜',day:'☀ 白天',night:'☾ 夜晚',play:'▶ 自动漫游',pause:'Ⅱ 暂停漫游',speed:'时间流速',palette:'色彩氛围',language:'界面语言',clockMode:'时间显示',syncNow:'◷ 现实时间同步',reset:'恢复默认设置',diagnostics:'运行诊断',renderMode:'渲染模式',devicePixelRatio:'设备像素比',viewport:'视口尺寸',motionSetting:'动态效果偏好',storage:'本地设置',hint:'拖动圆环调整时间 · 键盘方向键微调 · 空格切换昼夜',saved:'运行正常 · 设置自动保存',dawnPhase:'清晨',dayPhase:'白天',duskPhase:'黄昏',nightPhase:'夜晚',synced:'已同步本地时间',resetDone:'已恢复默认设置'},
- en:{pageTitle:'Pixel Orbit · A Little World in Motion',orbitLabel:'Day and night orbit control',rangeLabel:'Adjust time of day',themeDefault:'Countryside',themeCoast:'Misty Coast',themeLavender:'Lavender Dusk',themeAmber:'Warm Amber',clock24:'24-hour',clock12:'12-hour',subtitle:'A tiny pixel world that breathes with time',timeOfDay:'TIME OF DAY',dawn:'☀ Dawn',noon:'☼ Noon',dusk:'◒ Dusk',lateNight:'☾ Late night',day:'☀ Day',night:'☾ Night',play:'▶ Let it wander',pause:'Ⅱ Pause motion',speed:'Time speed',palette:'Color mood',language:'Language',clockMode:'Clock format',syncNow:'◷ Real-time sync',reset:'Reset preferences',diagnostics:'System diagnostics',renderMode:'Renderer',devicePixelRatio:'Device pixel ratio',viewport:'Viewport',motionSetting:'Reduced motion',storage:'Local preferences',hint:'Drag the orbit to set time · Arrow keys to adjust · Space to toggle',saved:'Running smoothly · Preferences saved locally',dawnPhase:'Dawn',dayPhase:'Day',duskPhase:'Dusk',nightPhase:'Night',synced:'Synced to local time',resetDone:'Preferences restored'},
- ja:{pageTitle:'Pixel Orbit · 小さな世界',orbitLabel:'昼夜の軌道コントロール',rangeLabel:'時刻を調整',themeDefault:'田園',themeCoast:'霧の海岸',themeLavender:'ラベンダーの夕暮れ',themeAmber:'琥珀色の暖光',clock24:'24時間',clock12:'12時間',subtitle:'時間とともに息づく、小さなドットの世界',timeOfDay:'時刻',dawn:'☀ 夜明け',noon:'☼ 正午',dusk:'◒ 夕暮れ',lateNight:'☾ 深夜',day:'☀ 昼',night:'☾ 夜',play:'▶ 自動で巡る',pause:'Ⅱ 一時停止',speed:'時間の速さ',palette:'カラームード',language:'表示言語',clockMode:'時刻表示',syncNow:'◷ 現実時間に同期',reset:'設定をリセット',diagnostics:'システム診断',renderMode:'描画方式',devicePixelRatio:'デバイス倍率',viewport:'画面サイズ',motionSetting:'視覚効果設定',storage:'ローカル設定',hint:'リングをドラッグして時刻を変更 · 矢印キーで調整 · Spaceで昼夜切替',saved:'正常に動作中 · 設定を保存しました',dawnPhase:'夜明け',dayPhase:'昼',duskPhase:'夕暮れ',nightPhase:'夜',synced:'現在時刻に同期しました',resetDone:'設定を初期化しました'}};
+ 'zh-CN':{pageTitle:'Pixel Orbit · 像素轨道',orbitLabel:'昼夜轨道控制',rangeLabel:'调整一天中的时间',themeDefault:'原始田园',themeCoast:'海岸薄雾',themeLavender:'薰衣草暮色',themeAmber:'琥珀暖光',clock24:'24 小时',clock12:'12 小时',subtitle:'一座随时间呼吸的像素小世界',timeOfDay:'一天中的时间',dawn:'☀ 清晨',noon:'☼ 正午',dusk:'◒ 黄昏',lateNight:'☾ 深夜',day:'☀ 白天',night:'☾ 夜晚',play:'▶ 自动漫游',pause:'Ⅱ 暂停漫游',speed:'时间流速',palette:'色彩氛围',language:'界面语言',clockMode:'时间显示',syncNow:'↺ 回到本地当前时间',reset:'恢复默认设置',diagnostics:'运行诊断',renderMode:'渲染模式',devicePixelRatio:'设备像素比',viewport:'视口尺寸',motionSetting:'动态效果偏好',storage:'本地设置',hint:'拖动圆环调整时间 · 键盘方向键微调 · 空格切换昼夜',saved:'运行正常 · 设置自动保存',dawnPhase:'清晨',dayPhase:'白天',duskPhase:'黄昏',nightPhase:'夜晚',synced:'已同步本地时间',resetDone:'已恢复默认设置'},
+ en:{pageTitle:'Pixel Orbit · A Little World in Motion',orbitLabel:'Day and night orbit control',rangeLabel:'Adjust time of day',themeDefault:'Countryside',themeCoast:'Misty Coast',themeLavender:'Lavender Dusk',themeAmber:'Warm Amber',clock24:'24-hour',clock12:'12-hour',subtitle:'A tiny pixel world that breathes with time',timeOfDay:'TIME OF DAY',dawn:'☀ Dawn',noon:'☼ Noon',dusk:'◒ Dusk',lateNight:'☾ Late night',day:'☀ Day',night:'☾ Night',play:'▶ Let it wander',pause:'Ⅱ Pause motion',speed:'Time speed',palette:'Color mood',language:'Language',clockMode:'Clock format',syncNow:'↺ Sync local time',reset:'Reset preferences',diagnostics:'System diagnostics',renderMode:'Renderer',devicePixelRatio:'Device pixel ratio',viewport:'Viewport',motionSetting:'Reduced motion',storage:'Local preferences',hint:'Drag the orbit to set time · Arrow keys to adjust · Space to toggle',saved:'Running smoothly · Preferences saved locally',dawnPhase:'Dawn',dayPhase:'Day',duskPhase:'Dusk',nightPhase:'Night',synced:'Synced to local time',resetDone:'Preferences restored'},
+ ja:{pageTitle:'Pixel Orbit · 小さな世界',orbitLabel:'昼夜の軌道コントロール',rangeLabel:'時刻を調整',themeDefault:'田園',themeCoast:'霧の海岸',themeLavender:'ラベンダーの夕暮れ',themeAmber:'琥珀色の暖光',clock24:'24時間',clock12:'12時間',subtitle:'時間とともに息づく、小さなドットの世界',timeOfDay:'時刻',dawn:'☀ 夜明け',noon:'☼ 正午',dusk:'◒ 夕暮れ',lateNight:'☾ 深夜',day:'☀ 昼',night:'☾ 夜',play:'▶ 自動で巡る',pause:'Ⅱ 一時停止',speed:'時間の速さ',palette:'カラームード',language:'表示言語',clockMode:'時刻表示',syncNow:'↺ 現在時刻に同期',reset:'設定をリセット',diagnostics:'システム診断',renderMode:'描画方式',devicePixelRatio:'デバイス倍率',viewport:'画面サイズ',motionSetting:'視覚効果設定',storage:'ローカル設定',hint:'リングをドラッグして時刻を変更 · 矢印キーで調整 · Spaceで昼夜切替',saved:'正常に動作中 · 設定を保存しました',dawnPhase:'夜明け',dayPhase:'昼',duskPhase:'夕暮れ',nightPhase:'夜',synced:'現在時刻に同期しました',resetDone:'設定を初期化しました'}};
  let prefs={...defaults},storageOK=true;try{prefs={...prefs,...JSON.parse(localStorage.getItem('pixel-orbit:prefs')||'{}')}}catch(_){storageOK=false}
  if(!palettes[prefs.theme])prefs.theme='default';if(!dict[prefs.language])prefs.language='zh-CN';if(!['12','24'].includes(String(prefs.clockMode)))prefs.clockMode='24';
  const tr=()=>dict[prefs.language],save=()=>{try{localStorage.setItem('pixel-orbit:prefs',JSON.stringify(prefs));storageOK=true}catch(_){storageOK=false}$('diag-storage').textContent=storageOK?'OK':'Unavailable'};
  const applyTheme=()=>{Object.entries(palettes[prefs.theme]).forEach(([k,v])=>el.style.setProperty('--orbit-'+k,v));theme.value=prefs.theme;ring.refreshColors()};
  const format=h=>{const m=Math.round((((h%24)+24)%24)*60)%1440,hh=Math.floor(m/60),mm=m%60;return prefs.clockMode==='12'?(hh%12||12)+':'+String(mm).padStart(2,'0')+(hh<12?' AM':' PM'):String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')};
  const phaseName=h=>tr()[h>=5&&h<7.5?'dawnPhase':h>=7.5&&h<17?'dayPhase':h>=17&&h<19.5?'duskPhase':'nightPhase'];
- const applyLanguage=()=>{document.documentElement.lang=prefs.language;document.querySelectorAll('[data-i18n]').forEach(n=>{const v=tr()[n.dataset.i18n];if(v)n.textContent=v});document.title=tr().pageTitle;el.setAttribute('aria-label',tr().orbitLabel);range.setAttribute('aria-label',tr().rangeLabel);language.value=prefs.language;phase.textContent=phaseName(ring.getHour());auto.textContent=auto.getAttribute('aria-pressed')==='true'?tr().pause:tr().play;$('btn-now').setAttribute('aria-pressed',String(ring.isRealTimeSync()));$('status-text').textContent=tr().saved};
- const update=d=>{$('btn-now').setAttribute('aria-pressed',String(ring.isRealTimeSync()));clock.textContent=format(d.hour);timeValue.textContent=format(d.hour);range.value=String(Math.round(d.hour*60)%1440);phase.textContent=phaseName(d.hour);presets.forEach(b=>b.setAttribute('aria-pressed',String(Math.abs(Number(b.dataset.preset)-d.hour)<.03)));$('btn-day').setAttribute('aria-pressed',String(d.hour>=6&&d.hour<18));$('btn-night').setAttribute('aria-pressed',String(d.hour>=18||d.hour<6))};
+ const applyLanguage=()=>{document.documentElement.lang=prefs.language;document.querySelectorAll('[data-i18n]').forEach(n=>{const v=tr()[n.dataset.i18n];if(v)n.textContent=v});document.title=tr().pageTitle;el.setAttribute('aria-label',tr().orbitLabel);range.setAttribute('aria-label',tr().rangeLabel);language.value=prefs.language;phase.textContent=phaseName(ring.getHour());auto.textContent=auto.getAttribute('aria-pressed')==='true'?tr().pause:tr().play;$('status-text').textContent=tr().saved};
+ const update=d=>{clock.textContent=format(d.hour);timeValue.textContent=format(d.hour);range.value=String(Math.round(d.hour*60)%1440);phase.textContent=phaseName(d.hour);presets.forEach(b=>b.setAttribute('aria-pressed',String(Math.abs(Number(b.dataset.preset)-d.hour)<.03)));$('btn-day').setAttribute('aria-pressed',String(d.hour>=6&&d.hour<18));$('btn-night').setAttribute('aria-pressed',String(d.hour>=18||d.hour<6))};
  ring.onChange(update);update({hour:ring.getHour()});speed.value=prefs.speed;speedValue.textContent=prefs.speed+' s / day';theme.value=prefs.theme;language.value=prefs.language;clockMode.value=prefs.clockMode;applyTheme();applyLanguage();
- const stop=()=>{ring.setRealTimeSync(false);$('btn-now').setAttribute('aria-pressed','false');prefs.realTimeSync=false;save();ring.setAutoplay(0);auto.setAttribute('aria-pressed','false');auto.textContent=tr().play},setHour=h=>{stop();ring.setHour(h)};
+ const stop=()=>{ring.setAutoplay(0);auto.setAttribute('aria-pressed','false');auto.textContent=tr().play},setHour=h=>{stop();ring.setHour(h)};
  $('btn-day').addEventListener('click',()=>setHour(12));$('btn-night').addEventListener('click',()=>setHour(23));presets.forEach(b=>b.addEventListener('click',()=>setHour(Number(b.dataset.preset))));
  range.addEventListener('input',()=>{stop();ring.setHour(Number(range.value)/60,false)});
- auto.addEventListener('click',()=>{const on=auto.getAttribute('aria-pressed')!=='true';if(on)stop();auto.setAttribute('aria-pressed',String(on));ring.setAutoplay(on?Number(prefs.speed):0);auto.textContent=on?tr().pause:tr().play;save()});
+ auto.addEventListener('click',()=>{const on=auto.getAttribute('aria-pressed')!=='true';auto.setAttribute('aria-pressed',String(on));ring.setAutoplay(on?Number(prefs.speed):0);auto.textContent=on?tr().pause:tr().play});
  speed.addEventListener('input',()=>{prefs.speed=Number(speed.value);speedValue.textContent=prefs.speed+' s / day';if(auto.getAttribute('aria-pressed')==='true')ring.setAutoplay(prefs.speed);save()});
  theme.addEventListener('change',()=>{prefs.theme=theme.value;applyTheme();save()});language.addEventListener('change',()=>{prefs.language=language.value;applyLanguage();save()});clockMode.addEventListener('change',()=>{prefs.clockMode=clockMode.value;update({hour:ring.getHour()});save()});
- $('btn-now').addEventListener('click',()=>{const on=!ring.isRealTimeSync();ring.setRealTimeSync(on);prefs.realTimeSync=on;$('btn-now').setAttribute('aria-pressed',String(on));if(on){ring.setAutoplay(0);auto.setAttribute('aria-pressed','false');auto.textContent=tr().play;$('status-text').textContent=tr().synced}else{$('status-text').textContent=tr().saved}save()});
+ $('btn-now').addEventListener('click',()=>{stop();const n=new Date();ring.setHour(n.getHours()+n.getMinutes()/60,false);$('status-text').textContent=tr().synced});
  $('btn-reset').addEventListener('click',()=>{prefs={...defaults};speed.value=prefs.speed;speedValue.textContent=prefs.speed+' s / day';clockMode.value=prefs.clockMode;stop();applyTheme();applyLanguage();update({hour:ring.getHour()});save();$('status-text').textContent=tr().resetDone});
  const diagnose=()=>{$('diag-dpr').textContent=String(devicePixelRatio||1);$('diag-viewport').textContent=innerWidth+' × '+innerHeight;$('diag-motion').textContent=matchMedia('(prefers-reduced-motion: reduce)').matches?'Reduced':'Full';$('diag-storage').textContent=storageOK?'OK':'Unavailable'};
- if(prefs.realTimeSync){ring.setRealTimeSync(true);$('btn-now').setAttribute('aria-pressed','true')};diagnose();addEventListener('resize',diagnose,{passive:true});save();
+ diagnose();addEventListener('resize',diagnose,{passive:true});save();
 };
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

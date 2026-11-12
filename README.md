@@ -1,6 +1,6 @@
 # Pixel Orbit
 
-**Current project version: v1.2.1** · Updated 2026-11-12
+**Current project version: v1.1.0** · Updated 2026-11-12
 
 [![Quality checks](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml/badge.svg)](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
 
@@ -25,19 +25,9 @@
 
 ---
 
-## Latest release · v1.2.1
+## Latest release · v1.1.0
 
-This patch limits the planet scene's continuous software-rendering workload on mobile devices, prioritizing responsive touch and pointer input while preserving the astronomical lighting model and manual controls.
-
-The real-time planet view renders at up to 12 frames per second, accelerated autoplay at up to 15, and active manual interaction at up to 20. The countryside renderer is unchanged.
-
----
-
-## Previous release · v1.2.0
-
-This release adds astronomical solar lighting to the planet scene, while preserving the existing manual controls and accelerated autoplay. The planet scene uses UTC-based solar coordinates, seasonal solar declination and Earth's sidereal rotation to keep the day/night boundary consistent for visitors around the world. Its pixel terrain remains procedural artwork, not a geographic map, so it should not be used to identify exact countries or cities.
-
-It also retains the host-friendly showcase mode for the portfolio site:
+This release adds a host-friendly showcase mode for the portfolio site:
 
 - `showcase.html` selects the countryside or planet scene using `?scene=countryside|planet`.
 - `?composition=art` renders the enlarged, intentionally cropped portfolio preview; `?composition=full` renders the complete artwork for the expanded detail view.
@@ -133,7 +123,6 @@ Pixel Orbit is a dependency-free pixel-art day/night experience. Move through a 
 ### Features
 
 - 152 × 152 pixel-art countryside inside a circular window.
-- The planet scene uses UTC-based solar coordinates, seasonal declination and sidereal rotation for a globally consistent day/night terminator; its terrain is illustrative, not a geographic map.
 - A 24-hour orbit dial, draggable time control and exact-minute slider.
 - Dawn, noon, dusk and late-night presets.
 - Day, night and automatic cycle modes.
