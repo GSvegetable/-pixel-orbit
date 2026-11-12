@@ -72,14 +72,16 @@ assert.ok(rootEntry.includes("window.location.replace(new URL('./play.html'"), '
 
 const lab = readFileSync(new URL('../lab.html', import.meta.url), 'utf8');
 const play = readFileSync(new URL('../play.html', import.meta.url), 'utf8');
-assert.ok(lab.includes('id="lab-preview" src="./pixel-orbit.html"'), 'lab must embed the full-control countryside editor');
-assert.ok(lab.includes("planet:'./pixel-orbit-planet.html'"), 'lab must switch to the full-control planet editor');
+assert.ok(lab.includes('id="lab-preview" src="./pixel-orbit.html?lab=1"'), 'lab must embed the full-control countryside editor');
+assert.ok(lab.includes("planet:'./pixel-orbit-planet.html?lab=1'"), 'lab must switch to the full-control planet editor');
 assert.ok(play.includes("./pixel-orbit.html?display=1"), 'public player must load the clean countryside scene');
 assert.ok(play.includes("./pixel-orbit-planet.html?display=1"), 'public player must load the clean planet scene');
 assert.ok(play.includes('田园') && play.includes('星球'), 'public player must expose only the two scene choices');
 assert.ok(html.includes('display-mode main > :not(.pixel-orbit)'), 'countryside display mode must hide its parameter UI');
 assert.ok(planetHtml.includes('display-mode main > :not(.pixel-orbit)'), 'planet display mode must hide its parameter UI');
-assert.ok(lab.includes('pixel-orbit-planet.html'), 'lab must link to the alternate planet edition');
+assert.ok(lab.includes('pixel-orbit-planet.html?lab=1'), 'lab must load the focused planet editor');
+assert.ok(html.includes('lab-mode main>.control-shell'), 'countryside editor must use the focused laboratory layout');
+assert.ok(planetHtml.includes('lab-mode main>.row'), 'planet editor must use the focused laboratory layout');
 assert.ok(lab.includes('title="Pixel Orbit parameter laboratory"'), 'lab iframe must have an accessible title');
 assert.ok(lab.includes('loading="lazy"'), 'lab preview should defer loading until needed');
 for (const apiMethod of ['setHour(18)', 'setAutoplay(48)', 'getHour()', 'isNight()', 'refreshColors()', 'destroy()']) {
