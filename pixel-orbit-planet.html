@@ -540,7 +540,10 @@ html.showcase-art-mode .pixel-orbit {
       const manualDelta = hour - localNowHour;
       const simulationDate = realTimeSync ? now : new Date(now.getTime() + manualDelta * 3600000);
       const moving = realTimeSync || Math.abs(target - hour) > 0.0006 || o.autoplay > 0 || !!drag;
-      if (moving || ts - lastDraw > 33) { draw(ts / 1000, simulationDate); lastDraw = ts; publish(); }
+      // The planet renderer performs a full 152×152 software raster on the main thread.
+      // Cap continuous redraws on mobile so pointer/touch events get time to run.
+      const renderInterval = realTimeSync ? 1000 / 12 : o.autoplay > 0 ? 1000 / 15 : 1000 / 20;
+      if (ts - lastDraw >= renderInterval) { draw(ts / 1000, simulationDate); lastDraw = ts; publish(); }
       if (visible && !document.hidden && (!calm || moving)) raf = requestAnimationFrame(frame);
     };
     function wake() { if (!raf && !dead) { lastTs = performance.now(); raf = requestAnimationFrame(frame); } }
