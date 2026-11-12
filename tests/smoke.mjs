@@ -65,15 +65,16 @@ for (const hour of [0, 6, 12, 18, 23]) {
 
 // The astronomical mode must depend on the absolute instant, not the visitor's timezone,
 // and seasonal solar declination must alter the terminator.
-const sameInstantUtc = planetRenderer.render(12, 0, { calm: true, date: new Date('2026-06-21T12:00:00Z') });
-const sameInstantOffset = planetRenderer.render(12, 0, { calm: true, date: new Date('2026-06-21T08:00:00-04:00') });
-assert.deepEqual(Array.from(sameInstantUtc), Array.from(sameInstantOffset),
+const renderPlanetAt = (instant) => Array.from(planetRenderer.render(12, 0, { calm: true, date: new Date(instant) }));
+const sameInstantUtc = renderPlanetAt('2026-06-21T12:00:00Z');
+const sameInstantOffset = renderPlanetAt('2026-06-21T08:00:00-04:00');
+assert.deepEqual(sameInstantUtc, sameInstantOffset,
   'the same absolute instant must produce the same global sunlight in every timezone');
-const equinoxPixels = planetRenderer.render(12, 0, { calm: true, date: new Date('2026-03-20T12:00:00Z') });
-assert.notDeepEqual(Array.from(equinoxPixels), Array.from(sameInstantUtc),
+const equinoxPixels = renderPlanetAt('2026-03-20T12:00:00Z');
+assert.notDeepEqual(equinoxPixels, sameInstantUtc,
   'seasonal solar declination must change the illuminated globe');
-const sixHoursLater = planetRenderer.render(12, 0, { calm: true, date: new Date('2026-06-21T18:00:00Z') });
-assert.notDeepEqual(Array.from(sameInstantUtc), Array.from(sixHoursLater),
+const sixHoursLater = renderPlanetAt('2026-06-21T18:00:00Z');
+assert.notDeepEqual(sameInstantUtc, sixHoursLater,
   'Earth rotation must move the geographic day/night boundary over time');
 assert.ok(planetHtml.includes('solarEphemeris') && planetHtml.includes('astro.gmst') && planetHtml.includes('astro.dec'),
   'planet edition must use solar coordinates, sidereal rotation and seasonal declination');
