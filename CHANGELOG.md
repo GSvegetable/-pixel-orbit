@@ -17,6 +17,16 @@ Pixel Orbit 的独立项目版本记录。网站作品集中的嵌入展示与�
 - Pixel Orbit quality workflow passed for the showcase integration changes.
 - Browser-level visual acceptance on the hosted site remains a separate deployment check.
 
+## v1.2.1 — 2026-11-12
+
+### Fixed
+- 限制星球版持续软件渲染的帧率：现实时间模式最高 12 FPS、自动漫游最高 15 FPS、手动交互最高 20 FPS，减少移动设备主线程持续占用，给触摸与点击事件留出响应时间。
+- 仅调整星球版渲染调度，田园版渲染器保持不变。
+
+### Validation
+- 增加自动化断言，确保星球版实时、自动和手动模式均使用分级帧率上限。
+- GitHub Actions 质量检查与 Pages 部署结果以本次提交后的工作流状态为准。
+
 ## v1.2.0 — 2026-11-12
 
 ### Added
