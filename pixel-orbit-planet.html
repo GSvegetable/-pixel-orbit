@@ -401,7 +401,7 @@ html.showcase-art-mode .pixel-orbit {
     const glowCanvas = document.createElement('canvas');
     glowCanvas.width = glowCanvas.height = N * 2;
     glowCanvas.setAttribute('aria-hidden', 'true');
-    glowCanvas.style.cssText = 'position:absolute;z-index:0;pointer-events:none;width:200%;height:200%;left:-50%;top:-50%;';
+    glowCanvas.style.cssText = 'position:absolute;z-index:0;pointer-events:none;left:50%;top:50%;transform:translate(-50%,-50%);';
     el.style.position = 'relative'; el.style.isolation = 'isolate';
     el.appendChild(glowCanvas);
     const glowCtx = glowCanvas.getContext('2d');
@@ -433,13 +433,13 @@ html.showcase-art-mode .pixel-orbit {
     };
     const draw = (t) => {
       const hh = ((hour % 24) + 24) % 24;
-      const angle = ((hh - 12) / 24) * Math.PI * 2;
-      const sunX = 2 * (76 + Math.sin(angle) * 58);
-      const sunY = 2 * (76 - Math.cos(angle) * 58);
+      const th = ((hh - 12) / 24) * Math.PI * 2;
+      const sx = Math.sin(th), sy = -Math.cos(th);
       const isNight = hh >= 18.5 || hh < 5.5;
+      const sourceX = isNight ? 76 - sx * 68 : 76 + sx * 68;
+      const sourceY = isNight ? 76 - sy * 68 : 76 + sy * 68;
+      const gx = sourceX * 2, gy = sourceY * 2;
       glowCtx.clearRect(0, 0, N * 2, N * 2);
-      const gx = isNight ? N * 2 - sunX : sunX;
-      const gy = isNight ? N * 2 - sunY : sunY;
       const glow = glowCtx.createRadialGradient(gx, gy, 2, gx, gy, 118);
       if (isNight) {
         glow.addColorStop(0, 'rgba(126,178,255,.52)');
@@ -483,7 +483,7 @@ html.showcase-art-mode .pixel-orbit {
       }
       ctx.putImageData(img, 0, 0);
     };
-    const fit = () => { const dpr = window.devicePixelRatio || 1; const w = el.clientWidth || N; const k = Math.max(1, Math.floor((w * dpr) / N)); canvas.style.width = canvas.style.height = (N * k) / dpr + 'px'; };
+    const fit = () => { const dpr = window.devicePixelRatio || 1; const w = el.clientWidth || N; const k = Math.max(1, Math.floor((w * dpr) / N)); const size = (N * k) / dpr; canvas.style.width = canvas.style.height = size + 'px'; glowCanvas.style.width = glowCanvas.style.height = (size * 2) + 'px'; };
 
     const frame = (ts) => {
       raf = 0; if (dead) return; const dt = Math.min(0.1, (ts - lastTs) / 1000 || 0.016); lastTs = ts;
