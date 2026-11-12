@@ -7,8 +7,6 @@ on:
       - "pixel-orbit.html"
       - "pixel-orbit-planet.html"
       - "play.html"
-      - "pixel-orbit-planet.html"
-      - "play.html"
       - "index.html"
       - "lab.html"
       - "README.md"
@@ -19,6 +17,8 @@ on:
   pull_request:
     paths:
       - "pixel-orbit.html"
+      - "pixel-orbit-planet.html"
+      - "play.html"
       - "index.html"
       - "lab.html"
       - "README.md"
