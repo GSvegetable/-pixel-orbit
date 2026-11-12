@@ -67,8 +67,8 @@ assert.ok(planetHtml.includes('Number.isFinite(seconds) && seconds > 0'), 'plane
 assert.ok(planetHtml.includes('if (el.__pixelOrbit === api) delete el.__pixelOrbit'), 'planet destroy must release the mount marker');
 
 const rootEntry = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-assert.ok(rootEntry.includes('url=./pixel-orbit.html'), 'root entry must provide a no-JavaScript fallback redirect');
-assert.ok(rootEntry.includes("window.location.replace(new URL('./pixel-orbit.html'"), 'root entry must navigate to the main experience');
+assert.ok(rootEntry.includes('url=./play.html'), 'root entry must provide a no-JavaScript fallback redirect');
+assert.ok(rootEntry.includes("window.location.replace(new URL('./play.html'"), 'root entry must navigate to the main experience');
 
 const lab = readFileSync(new URL('../lab.html', import.meta.url), 'utf8');
 const play = readFileSync(new URL('../play.html', import.meta.url), 'utf8');
