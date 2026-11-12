@@ -42,27 +42,35 @@
   .pixel-orbit canvas { display: block; image-rendering: pixelated; pointer-events: none; filter: drop-shadow(0 .9rem 1.4rem rgb(0 0 0 / .3)); }
 
 /* Portfolio and clean-player embedding modes for the third visual edition.
-   早先这里自己另写了一套 absolute + top:50% 的定位，结果有两处硬伤：
-   ① 漏了隐藏页面 chrome 的规则 → 标题、时钟、按钮、提示文字全压在画面上；
-   ② main 的高度没撑满嵌套 iframe → 环形世界被挤成顶部一条窄带。
-   现在直接沿用星球版 / 田园版那套已经验证过的 showcase 模式。 */
+   展示模式必须和星球版 / 田园版用同一套定位：
+   闭合卡片里作品下沉并放大（art 构图），展开时上浮回居中自然尺寸（full 构图）。
+   之前这里改成了 grid 居中，结果过渡没了、画布只剩原始尺寸，环形世界看起来比另外两版小一圈。 */
 html.display-mode,html.display-mode body{width:100%;height:100%;min-height:100%;overflow:hidden}
 html.display-mode body{display:grid;place-items:center}
-html.display-mode main{width:100%;height:100svh;min-height:100svh;padding:0;gap:0;align-content:center}
+html.display-mode main{width:100%;height:100svh;min-height:100svh;padding:0;gap:0}
 html.display-mode main>:not(.pixel-orbit){display:none!important}
-html.display-mode .pixel-orbit{--orbit-size:min(64svh,88vw,520px)}
+html.display-mode .pixel-orbit{--orbit-size:min(92vmin,560px)}
 html.showcase-mode,html.showcase-mode body{background:transparent!important;background-color:transparent!important}
 html.showcase-mode,html.showcase-mode body{width:100%;height:100%;min-height:100%;overflow:hidden}
 html.showcase-mode body{display:grid;place-items:center;position:relative;isolation:isolate}
 html.showcase-mode body::before{content:"";position:fixed;z-index:0;left:50%;top:50%;width:min(105vmin,760px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(circle,color-mix(in oklab,#e8c77f 26%,#547cc5 calc(var(--night,0)*28%)) 0%,color-mix(in oklab,#d9b66f 15%,#365b9c calc(var(--night,0)*20%)) 30%,transparent 70%);filter:blur(34px);opacity:.9}
-html.showcase-mode main{position:relative;z-index:1;width:100%;height:100%;min-height:100%;padding:0;gap:0;display:grid;place-items:center}
+html.showcase-mode main{position:relative;display:block;width:100%;height:100%;min-height:100%;margin:0;padding:0;overflow:hidden}
 html.showcase-mode main>:not(.pixel-orbit){display:none!important}
-html.showcase-mode .pixel-orbit{--orbit-size:min(66vmin,360px);position:relative;z-index:1;isolation:isolate}
-/* 闭合卡片里的艺术裁切：作品放大后下移，留出刻意的上方空间。 */
-html.showcase-art-mode body{display:grid;place-items:start center}
-html.showcase-art-mode main{display:grid;place-items:start center;padding-top:20vh;overflow:visible}
-html.showcase-art-mode .pixel-orbit{--orbit-size:min(150vmin,760px);margin-top:0;transform:translateY(0)}
-@media(prefers-reduced-motion:reduce){html.showcase-mode main{transition:none}}
+html.showcase-mode .pixel-orbit{
+  position:absolute;left:0;right:0;top:50%;
+  width:min(92vmin,560px);
+  margin:0 auto;
+  transform-origin:top center;
+  transform:translateY(-50%) scale(1);
+  transition:top 620ms cubic-bezier(.22,.8,.2,1),transform 620ms cubic-bezier(.22,.8,.2,1);
+  will-change:transform,top;
+}
+html.showcase-art-mode .pixel-orbit{
+  top:20vh;
+  transform-origin:top center;
+  transform:scale(1.36);
+}
+@media(prefers-reduced-motion:reduce){html.showcase-mode .pixel-orbit{transition-duration:.01ms}}
 </style>
 </head>
 <body>
