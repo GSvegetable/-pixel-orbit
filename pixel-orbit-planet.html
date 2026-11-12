@@ -402,7 +402,21 @@ html.showcase-art-mode .pixel-orbit {
         lastPhase = ph;
       }
     };
-    const draw = (t) => { u32.set(renderer.render(hour, t, { calm })); ctx.putImageData(img, 0, 0); };
+    const draw = (t) => {
+      u32.set(renderer.render(hour, t, { calm }));
+      /* Keep the scene inside the circular orbit, but discard the square canvas corners.
+         This preserves the live day/night artwork while allowing the outer halo to show. */
+      const cx = N / 2, cy = N / 2, radius = 77, feather = 2.5;
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+          const p = (y * N + x) * 4 + 3;
+          if (d >= radius) img.data[p] = 0;
+          else if (d > radius - feather) img.data[p] = Math.round(img.data[p] * (radius - d) / feather);
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    };
     const fit = () => { const dpr = window.devicePixelRatio || 1; const w = el.clientWidth || N; const k = Math.max(1, Math.floor((w * dpr) / N)); canvas.style.width = canvas.style.height = (N * k) / dpr + 'px'; };
 
     const frame = (ts) => {
