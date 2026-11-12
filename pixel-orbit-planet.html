@@ -264,16 +264,7 @@ html.showcase-art-mode .pixel-orbit {
   };
   const SPR_MAT = { r: 'roof', w: 'wall', k: 'glass', d: 'wood', c: 'stone', g: 'leaf', G: 'leaf2', t: 'wood' };
 
-  const createRenderer = (colors) => {
-    const pal = buildPalette(colors); const tex = buildTextures(); const buf = new Uint32Array(N * N);
-    const st = { smoke: [], smokeT: 0, shoot: null, shootT: 4 };
-    const PR = 31, PX = CX, PY = 82;                      // 星球半径 / 圆心
-    const WORLD = 61.5, BEZ = 62;                           // 天穹半径 / 圆环内沿
-    const BEAD_R = 68;                                      // 太阳月亮沿轨道运行的半径
-    const CLOUDS = [[-30, 34, 1, 2.2], [40, 24, 0.8, 1.5], [95, 46, 1.1, 2.8], [150, 30, 0.7, 1.9]];
-    const BIRDS = [[0, 30, 6], [70, 40, 5.2]];
-
-    // Low-order solar ephemeris: apparent geocentric Sun coordinates and Greenwich
+  // Low-order solar ephemeris: apparent geocentric Sun coordinates and Greenwich
   // mean sidereal angle. Accuracy is suitable for a visual day/night globe.
   const solarEphemeris = (date) => {
     const jd = date.getTime() / 86400000 + 2440587.5;
@@ -295,7 +286,16 @@ html.showcase-art-mode .pixel-orbit {
     return { ra, dec, gmst };
   };
 
-  const render = (hour, t = 0, opts = {}) => {
+  const createRenderer = (colors) => {
+    const pal = buildPalette(colors); const tex = buildTextures(); const buf = new Uint32Array(N * N);
+    const st = { smoke: [], smokeT: 0, shoot: null, shootT: 4 };
+    const PR = 31, PX = CX, PY = 82;                      // 星球半径 / 圆心
+    const WORLD = 61.5, BEZ = 62;                           // 天穹半径 / 圆环内沿
+    const BEAD_R = 68;                                      // 太阳月亮沿轨道运行的半径
+    const CLOUDS = [[-30, 34, 1, 2.2], [40, 24, 0.8, 1.5], [95, 46, 1.1, 2.8], [150, 30, 0.7, 1.9]];
+    const BIRDS = [[0, 30, 6], [70, 40, 5.2]];
+
+    const render = (hour, t = 0, opts = {}) => {
       const calm = !!opts.calm;
       const astro = opts.date instanceof Date ? solarEphemeris(opts.date) : null;
       const legacyHour = ((hour % 24) + 24) % 24;
@@ -475,10 +475,11 @@ html.showcase-art-mode .pixel-orbit {
       }
     };
     const draw = (t, simulationDate) => {
-      const hh = ((hour % 24) + 24) % 24;
-      const th = ((hh - 12) / 24) * Math.PI * 2;
-      const sx = Math.sin(th), sy = -Math.cos(th);
-      const isNight = hh >= 18.5 || hh < 5.5;
+      const astro = simulationDate instanceof Date ? solarEphemeris(simulationDate) : null;
+      const hourAngle = astro ? Math.atan2(Math.sin(astro.gmst - astro.ra), Math.cos(astro.gmst - astro.ra)) : ((hour % 24) / 24 - 0.5) * Math.PI * 2;
+      const sx = Math.sin(hourAngle), sy = -Math.cos(hourAngle);
+      const solarUp = astro ? Math.cos(astro.dec) * Math.cos(hourAngle) : Math.cos(hourAngle);
+      const isNight = solarUp < -0.02;
       const sourceX = isNight ? 76 - sx * 68 : 76 + sx * 68;
       const sourceY = isNight ? 76 - sy * 68 : 76 + sy * 68;
       const gx = sourceX * 2, gy = sourceY * 2;
@@ -497,7 +498,6 @@ html.showcase-art-mode .pixel-orbit {
       glowCtx.fillStyle = glow;
       glowCtx.fillRect(0, 0, N * 2, N * 2);
       u32.set(renderer.render(hour, t, { calm, date: simulationDate }));
-      u32.set(renderer.render(hour, t, { calm }));
       /* Keep the scene inside the circular orbit, but discard the square canvas corners.
          This preserves the live day/night artwork while allowing the outer halo to show. */
       const cx = N / 2, cy = N / 2, radius = 77, feather = 2.5, spill = 22;
