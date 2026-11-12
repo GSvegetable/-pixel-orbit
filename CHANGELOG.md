@@ -1,5 +1,33 @@
 # Changelog
 
+## v1.2.3 — 2026-11-13
+
+### Added
+- 新增 `embed.js` 嵌入式脚本：两行代码就能把作品嵌进任何网页，和像素昼夜开关的用法一致。
+  ```html
+  <div data-pixel-orbit-embed></div>
+  <script src="https://gsvegetable.github.io/-pixel-orbit/embed.js" data-scene="planet"></script>
+  ```
+  支持 `data-scene`（田园 / 星球 / 环形世界）、`data-composition`（art / full）、`data-label`、`data-base`（自托管地址）四个参数；只写一行脚本也行，作品会自动插在脚本前面。
+- 新增 `embed-demo.html` 演示页，列出两种写法与全部参数。
+
+### Fixed
+- 修复星球版页面胶水代码在组件挂载前就取 `el.__pixelOrbit`：在 showcase 模式下必定抛 `Cannot read properties of undefined (reading 'onChange')`，导致该页的时钟与按钮全部失效。环形世界版上一版已修，星球版和田园版这次一并对齐。
+
+### Validation
+- 本地验证两种写法都能生成 520×520 的容器并正确载入 showcase 页；控制台除 favicon 404 外无报错。
+
+## v1.2.2 — 2026-11-13
+
+### Fixed
+- 环形世界版在作品集里的大小终于和星球版、田园版对齐：上一版把展示模式改成了 grid 居中，导致画布退回原始 168px（星球版是 304px），环内内容只占圆环 57%，看上去小了一圈。现改用与另外两版同一套定位规则，画布按整数像素步长放大到 336px，物理像素大小与另两版完全相同。
+- 环形世界版补上「主页下沉 → 点进去上浮」的过渡：闭合卡片里作品沉在下方位（`top:20vh` + `scale(1.36)`），展开时上浮回居中自然尺寸（`top:50%` + `translateY(-50%)`），620ms 缓动，与星球版落点一致（y 89 → 18，高度 559 → 411）。
+
+### Validation
+- 本地三版同尺寸对比：作品画布 rect 星球 / 田园 art 413px、full 304px；环形世界 art 457px、full 336px，像素步长均为 2。
+- 过渡实测：art y=89 h=559 → t=200ms y=29 h=434 → full y=18 h=411。
+- 环形世界独立页：时钟运行、按钮全部接线、控制台 0 报错。
+
 ## v1.2.1 — 2026-11-13
 
 ### Fixed

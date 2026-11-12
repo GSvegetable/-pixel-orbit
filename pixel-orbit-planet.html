@@ -548,10 +548,12 @@ html.showcase-art-mode .pixel-orbit {
 <script>
   // ---------- 页面胶水代码：只用到组件的公开 API ----------
   (() => {
-    const ring = document.querySelector('.pixel-orbit').__pixelOrbit;
+    // 组件在 DOMContentLoaded 才 mount，这段胶水代码在解析期就会跑到，
+    // 所以这里不能直接假设 el.__pixelOrbit 已经存在，否则会拿到 undefined。
+    const el = document.querySelector('.pixel-orbit'); const ring = el.__pixelOrbit || window.PixelOrbit.mount(el);
     const clock = document.getElementById('clock');
     const show = (d) => { clock.textContent = d.time + ' · ' + d.label; };
-    ring.onChange(show); show({ time: document.querySelector('.pixel-orbit').getAttribute('aria-valuetext').split(' · ')[0], label: document.querySelector('.pixel-orbit').getAttribute('aria-valuetext').split(' · ')[1] });
+    ring.onChange(show); const [t0, l0] = el.getAttribute('aria-valuetext').split(' · '); show({ time: t0, label: l0 });
     document.getElementById('btn-day').onclick = () => { ring.setRealTimeSync(false); document.getElementById('btn-now').setAttribute('aria-pressed','false'); ring.setHour(12); };
     document.getElementById('btn-night').onclick = () => { ring.setRealTimeSync(false); document.getElementById('btn-now').setAttribute('aria-pressed','false'); ring.setHour(23); };
     const auto = document.getElementById('btn-auto');

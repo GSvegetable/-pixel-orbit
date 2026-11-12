@@ -1,6 +1,6 @@
 # Pixel Orbit
 
-**Current project version: v1.2.0** · Updated 2026-11-13
+**Current project version: v1.2.3** · Updated 2026-11-13
 
 [![Quality checks](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml/badge.svg)](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
 
@@ -25,11 +25,11 @@
 
 ---
 
-## Latest release · v1.2.0
+## Latest release · v1.2.3
 
-- Adds the uploaded ring-world visual as an independent `pixel-orbit-world.html` edition without replacing the full countryside editor.
-- Extends the showcase bridge and public player to three scenes: countryside, planet and ring world.
-- Restores the complete countryside editor from the commit immediately before the accidental overwrite.
+- Adds `embed.js`: drop two lines into any page to embed the artwork, with the same API shape as Pixel Daylight Switch.
+- Adds `embed-demo.html` documenting both usage forms and every optional attribute.
+- Fixes the planet page's glue code, which grabbed `el.__pixelOrbit` before the component mounted and broke its clock and buttons.
 
 This release adds a host-friendly showcase mode for the portfolio site:
 

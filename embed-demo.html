@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101326">
+<title>Pixel Orbit · 嵌入示例 Embed</title>
+<style>
+:root{color-scheme:dark;background:#101326;color:#f4efdF;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;padding:40px 20px 80px}
+.wrap{width:min(880px,100%);margin:0 auto}
+h1{margin:0 0 6px;font-size:24px;letter-spacing:.02em}
+.lead{margin:0 0 28px;color:#9aa3c4;font-size:13px;line-height:1.8}
+h2{margin:44px 0 10px;font-size:15px;color:#f4bd3c;letter-spacing:.06em}
+pre{margin:0 0 18px;padding:14px 16px;overflow-x:auto;border:1px solid #ffffff22;border-radius:6px;background:#171a2b;color:#d8dcf0;font:12px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre b{color:#f4bd3c;font-weight:400}
+.note{margin:0 0 18px;color:#8f97b8;font-size:12px;line-height:1.8}
+.dark .po-embed{background:#171a2b}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>把 Pixel Orbit 嵌进任何网页</h1>
+  <p class="lead">复制下面两行，作品就会出现在页面里。样式只作用在它自己的容器上，不会影响你的排版。</p>
+
+  <h2>两行写法</h2>
+  <pre><b>&lt;div</b> data-pixel-orbit-embed<b>&gt;&lt;/div&gt;</b>
+<b>&lt;script</b> src="https://gsvegetable.github.io/-pixel-orbit/embed.js" data-scene="planet"<b>&gt;&lt;/script&gt;</b></pre>
+
+  <div data-pixel-orbit-embed></div>
+  <script src="./embed.js" data-scene="planet"></script>
+
+  <h2>只要一行</h2>
+  <pre><b>&lt;script</b> src="https://gsvegetable.github.io/-pixel-orbit/embed.js" data-scene="world" data-composition="full"<b>&gt;&lt;/script&gt;</b></pre>
+
+  <script src="./embed.js" data-scene="world" data-composition="full"></script>
+
+  <h2>可选参数</h2>
+  <p class="note">
+    data-scene：countryside（田园） / planet（星球） / world（环形世界），默认 planet。<br>
+    data-composition：art（主页那种下沉裁切构图） / full（完整圆环），默认 full。<br>
+    data-label：iframe 的无障碍标签文案。
+  </p>
+</div>
+</body>
+</html>
