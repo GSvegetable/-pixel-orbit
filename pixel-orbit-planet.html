@@ -78,6 +78,34 @@ html.lab-mode main>.row{grid-area:actions;align-self:start;flex-direction:column
 html.lab-mode main>.row button{width:100%}
 @media(max-width:760px){html.lab-mode body{display:block}html.lab-mode main{min-height:100svh;padding:20px 16px;grid-template-columns:minmax(0,1fr);grid-template-areas:'art' 'clock' 'actions';gap:12px}html.lab-mode main>.pixel-orbit{--orbit-size:min(78vw,440px)}html.lab-mode main>.row{flex-direction:row;max-width:none}html.lab-mode main>.row button{flex:1}}
 
+/* Transparent showcase with a restrained, time-responsive ambient halo. */
+html.showcase-mode body {
+  background: transparent !important;
+  color: transparent;
+  isolation: isolate;
+}
+html.showcase-mode body::before {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  inset: -18%;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 48%,
+      color-mix(in oklab, #f2e8d2 58%, #243b78 calc(var(--night, 0) * 58%)) 0%,
+      color-mix(in oklab, #e8c98c 28%, #314d91 calc(var(--night, 0) * 28%)) 24%,
+      transparent 66%);
+  filter: blur(38px);
+  opacity: .9;
+  transition: opacity 500ms ease;
+}
+html.showcase-mode main { z-index: 1; }
+html.showcase-mode .pixel-orbit canvas {
+  filter:
+    drop-shadow(0 0 12px color-mix(in oklab, #f4d99e 42%, #587acb calc(var(--night, 0) * 42%)))
+    drop-shadow(0 14px 24px rgb(0 0 0 / .18));
+}
+
 /* Smooth transition between the cropped home preview and the complete artwork. */
 html.showcase-mode body { position:relative; display:block; }
 html.showcase-mode main {
