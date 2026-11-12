@@ -273,19 +273,55 @@ html.showcase-art-mode .pixel-orbit {
     const CLOUDS = [[-30, 34, 1, 2.2], [40, 24, 0.8, 1.5], [95, 46, 1.1, 2.8], [150, 30, 0.7, 1.9]];
     const BIRDS = [[0, 30, 6], [70, 40, 5.2]];
 
-    const render = (hour, t = 0, opts = {}) => {
-      const calm = !!opts.calm; const hh = ((hour % 24) + 24) % 24;
-      const th = ((hh - 12) / 24) * TAU; const sx = Math.sin(th), sy = -Math.cos(th), cs = Math.cos(th);   // 太阳方向（屏幕）
-      const Lk = 0.62; let Lx = sx * Lk, Ly = sy * Lk, Lz = 0.85 * cs + 0.15; const Ll = Math.hypot(Lx, Ly, Lz); Lx /= Ll; Ly /= Ll; Lz /= Ll;
-      const Hx = Lx, Hy = Ly, Hz = Lz + 1, Hl = Math.hypot(Hx, Hy, Hz);                                    // 高光半程向量
-      const night = clamp(smooth(18.4, 20.6, hh) + (1 - smooth(4.6, 6.2, hh)));
-      const tf0 = clamp((cs + 0.35) / 0.9) * 3;                                                              // 天空 / 房子的色阶（带暮光滞后）
+    // Low-order solar ephemeris: apparent geocentric Sun coordinates and Greenwich
+  // mean sidereal angle. Accuracy is suitable for a visual day/night globe.
+  const solarEphemeris = (date) => {
+    const jd = date.getTime() / 86400000 + 2440587.5;
+    const T = (jd - 2451545.0) / 36525;
+    const rad = Math.PI / 180;
+    const L0 = ((280.46646 + T * (36000.76983 + 0.0003032 * T)) % 360 + 360) % 360;
+    const M = (357.52911 + T * (35999.05029 - 0.0001537 * T)) * rad;
+    const C = (1.914602 - T * (0.004817 + 0.000014 * T)) * Math.sin(M)
+      + (0.019993 - 0.000101 * T) * Math.sin(2 * M)
+      + 0.000289 * Math.sin(3 * M);
+    const omega = (125.04 - 1934.136 * T) * rad;
+    const lambda = (L0 + C - 0.00569 - 0.00478 * Math.sin(omega)) * rad;
+    const epsilon = (23.439291 - 0.0130042 * T + 0.00256 * Math.cos(omega)) * rad;
+    const ra = Math.atan2(Math.cos(epsilon) * Math.sin(lambda), Math.cos(lambda));
+    const dec = Math.asin(Math.sin(epsilon) * Math.sin(lambda));
+    const gmstDeg = 280.46061837 + 360.98564736629 * (jd - 2451545.0)
+      + 0.000387933 * T * T - T * T * T / 38710000;
+    const gmst = ((gmstDeg * rad) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    return { ra, dec, gmst };
+  };
+
+  const render = (hour, t = 0, opts = {}) => {
+      const calm = !!opts.calm;
+      const astro = opts.date instanceof Date ? solarEphemeris(opts.date) : null;
+      const legacyHour = ((hour % 24) + 24) % 24;
+      const hourAngle = astro ? Math.atan2(Math.sin(astro.gmst - astro.ra), Math.cos(astro.gmst - astro.ra)) : ((legacyHour - 12) / 24) * TAU;
+      const solarUp = astro ? Math.cos(astro.dec) * Math.cos(hourAngle) : Math.cos(hourAngle);
+      const hh = astro ? ((12 + hourAngle * 12 / Math.PI) % 24 + 24) % 24 : legacyHour;
+      const sx = Math.sin(hourAngle), sy = -Math.cos(hourAngle), cs = Math.cos(hourAngle);
+      let Lx, Ly, Lz;
+      if (astro) {
+        // The sun vector is fixed in the inertial view; the globe texture rotates
+        // beneath it at Earth's sidereal rotation rate.
+        Lx = Math.cos(astro.dec) * Math.cos(astro.ra);
+        Ly = -Math.sin(astro.dec);
+        Lz = Math.cos(astro.dec) * Math.sin(astro.ra);
+      } else {
+        const Lk = 0.62; Lx = sx * Lk; Ly = sy * Lk; Lz = 0.85 * cs + 0.15;
+        const Ll = Math.hypot(Lx, Ly, Lz); Lx /= Ll; Ly /= Ll; Lz /= Ll;
+      }
+      const Hx = Lx, Hy = Ly, Hz = Lz + 1, Hl = Math.hypot(Hx, Hy, Hz);
+      const night = astro ? 1 - smooth(-0.13, 0.025, solarUp) : clamp(smooth(18.4, 20.6, hh) + (1 - smooth(4.6, 6.2, hh)));
+      const tf0 = clamp((solarUp + 0.35) / 0.9) * 3;
       const sunTone = tf0, spin = calm ? 0.6 : t * 0.16;
-      // 关键帧过渡
       let k = 0; while (k < SKY.length - 2 && hh >= SKY[k + 1][0]) k++; const pk = smooth(SKY[k][0], SKY[k + 1][0], hh); const kA = SKY[k][1], kB = SKY[k + 1][1];
       const sunX = CX + sx * BEAD_R, sunY = CY + sy * BEAD_R, moonX = CX - sx * BEAD_R, moonY = CY - sy * BEAD_R;
-      const sunUp = clamp(cs * 0.6 + 0.55);                                                                  // 太阳亮度
-      const spinLon = spin; const cloudLon = spin * 1.35;
+      const sunUp = clamp(solarUp * 0.6 + 0.55);
+      const spinLon = astro ? -astro.gmst : spin; const cloudLon = astro ? spinLon + (calm ? 0 : t * 0.0008) : spin * 1.35;
       const pick = (lad, tfl, x, y) => lad[clamp(Math.round(tfl + (bay(x, y) - 0.5) * 1.05), 0, 3)];
       // 星球表面某像素的颜色
       const planet = (x, y, dxp, dyp) => {
@@ -438,7 +474,7 @@ html.showcase-art-mode .pixel-orbit {
         lastPhase = ph;
       }
     };
-    const draw = (t) => {
+    const draw = (t, simulationDate) => {
       const hh = ((hour % 24) + 24) % 24;
       const th = ((hh - 12) / 24) * Math.PI * 2;
       const sx = Math.sin(th), sy = -Math.cos(th);
@@ -460,7 +496,7 @@ html.showcase-art-mode .pixel-orbit {
       glow.addColorStop(1, 'rgba(255,255,255,0)');
       glowCtx.fillStyle = glow;
       glowCtx.fillRect(0, 0, N * 2, N * 2);
-      u32.set(renderer.render(hour, t, { calm }));
+      u32.set(renderer.render(hour, t, { calm, date: simulationDate }));
       u32.set(renderer.render(hour, t, { calm }));
       /* Keep the scene inside the circular orbit, but discard the square canvas corners.
          This preserves the live day/night artwork while allowing the outer halo to show. */
@@ -494,11 +530,15 @@ html.showcase-art-mode .pixel-orbit {
 
     const frame = (ts) => {
       raf = 0; if (dead) return; const dt = Math.min(0.1, (ts - lastTs) / 1000 || 0.016); lastTs = ts;
-      if (realTimeSync) { const now = new Date(); hour = target = now.getHours() + now.getMinutes() / 60 + (now.getSeconds() + now.getMilliseconds() / 1000) / 3600; }
+      const now = new Date();
+      const localNowHour = now.getHours() + now.getMinutes() / 60 + (now.getSeconds() + now.getMilliseconds() / 1000) / 3600;
+      if (realTimeSync) { hour = target = localNowHour; }
       else if (o.autoplay > 0 && !drag) { target += (dt * 24) / o.autoplay; hour = target; }
       else { const d = target - hour; if (calm || Math.abs(d) < 0.0006) hour = target; else hour += d * (1 - Math.exp(-rate * dt)); }
+      const manualDelta = hour - localNowHour;
+      const simulationDate = realTimeSync ? now : new Date(now.getTime() + manualDelta * 3600000);
       const moving = realTimeSync || Math.abs(target - hour) > 0.0006 || o.autoplay > 0 || !!drag;
-      if (moving || ts - lastDraw > 33) { draw(ts / 1000); lastDraw = ts; publish(); }
+      if (moving || ts - lastDraw > 33) { draw(ts / 1000, simulationDate); lastDraw = ts; publish(); }
       if (visible && !document.hidden && (!calm || moving)) raf = requestAnimationFrame(frame);
     };
     function wake() { if (!raf && !dead) { lastTs = performance.now(); raf = requestAnimationFrame(frame); } }
