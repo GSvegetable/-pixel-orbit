@@ -22,7 +22,7 @@ iframe{display:block;width:100%;height:100%;border:0;background:transparent}
   const artwork = document.getElementById("orbit-artwork");
   let activeComposition = composition;
   let artworkReady = false;
-  artwork.src = `./${page}?showcase=1&composition=${composition}&v=5`;
+  artwork.src = `./${page}?showcase=1&composition=${composition}&v=6`;
 
   const announceReady = () => {
     if (artworkReady) window.parent.postMessage({ type: "pixel-orbit-ready", scene }, "*");
