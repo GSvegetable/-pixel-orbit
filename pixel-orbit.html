@@ -82,6 +82,14 @@ html.showcase-mode .pixel-orbit { --orbit-size:min(66vmin, 360px); }
   .status{display:flex;justify-content:center;gap:.45rem;font-size:.62rem;opacity:.58}.status-dot{width:6px;height:6px;border-radius:50%;background:#83a66a;margin-top:.45rem}
   details{border-top:1px solid color-mix(in oklab,currentColor 16%,transparent);padding-top:.65rem;text-align:left}summary{cursor:pointer;font-size:.66rem;opacity:.65}.diagnostics{display:grid;grid-template-columns:1fr auto;gap:.35rem .8rem;padding-top:.7rem;font-size:.62rem;opacity:.7}.diagnostics output{font-size:inherit;min-height:0;letter-spacing:0}
   footer{font-size:.58rem;opacity:.4;letter-spacing:.1em}@media(max-width:420px){main{gap:.9rem;padding:1rem .7rem}.control-shell{padding:.8rem}.settings-grid{gap:.5rem}.action-row{gap:.35rem}}
+/* Focused editor layout for the laboratory shell. */
+html.lab-mode,html.lab-mode body{width:100%;min-height:100%;overflow-x:hidden}
+html.lab-mode body{min-height:100svh;align-items:center}
+html.lab-mode main{width:100%;max-width:1240px;min-height:100svh;margin:0 auto;padding:24px;gap:24px;grid-template-columns:minmax(280px,1fr) minmax(320px,420px);grid-template-areas:'art controls';align-items:center;justify-items:center;text-align:center}
+html.lab-mode main>.pixel-orbit{grid-area:art;--orbit-size:min(66vw,min(76svh,620px))}
+html.lab-mode main>.control-shell{grid-area:controls;width:100%;max-width:440px;max-height:calc(100svh - 48px);overflow:auto;text-align:left}
+html.lab-mode main>.brandline,html.lab-mode main>h1,html.lab-mode main>.subline,html.lab-mode main>.hint,html.lab-mode main>footer,html.lab-mode main>noscript{display:none!important}
+@media(max-width:760px){html.lab-mode body{display:block}html.lab-mode main{min-height:100svh;padding:20px 16px;grid-template-columns:minmax(0,1fr);grid-template-areas:'art' 'controls';gap:18px}html.lab-mode main>.pixel-orbit{--orbit-size:min(78vw,440px)}html.lab-mode main>.control-shell{max-height:none}}
 </style>
 </head>
 <body>
@@ -463,6 +471,6 @@ const init=()=>{
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
-<script>(()=>{const q=new URLSearchParams(location.search);if(q.get("display")==="1")document.documentElement.classList.add("display-mode");if(q.get("showcase")==="1")document.documentElement.classList.add("showcase-mode");})();</script>
+<script>(()=>{const q=new URLSearchParams(location.search);if(q.get("display")==="1")document.documentElement.classList.add("display-mode");if(q.get("showcase")==="1")document.documentElement.classList.add("showcase-mode");if(q.get("lab")==="1")document.documentElement.classList.add("lab-mode");})();</script>
 </body>
 </html>
