@@ -80,6 +80,8 @@ assert.ok(planetHtml.includes('solarEphemeris') && planetHtml.includes('astro.gm
   'planet edition must use solar coordinates, sidereal rotation and seasonal declination');
 assert.ok(planetHtml.includes('draw(ts / 1000, simulationDate)'),
   'real-time and accelerated modes must pass their simulated absolute date to the renderer');
+assert.ok(planetHtml.includes('realTimeSync ? 1000 / 12 : o.autoplay > 0 ? 1000 / 15 : 1000 / 20'),
+  'planet rendering must be frame-throttled to keep mobile interaction responsive');
 assert.ok(planetHtml.includes("e.type !== 'pointercancel'"), 'planet edition pointer cancellation must not toggle the scene');
 assert.ok(planetHtml.includes('Number.isFinite(seconds) && seconds > 0'), 'planet autoplay API must reject invalid durations');
 assert.ok(planetHtml.includes('if (el.__pixelOrbit === api) delete el.__pixelOrbit'), 'planet destroy must release the mount marker');
