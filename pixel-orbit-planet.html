@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>if(new URLSearchParams(location.search).get("display")==="1")document.documentElement.classList.add("display-mode");</script>
+
 <title>Pixel Orbit · 像素轨道开关</title>
 <style>
 
@@ -363,5 +363,6 @@ html.display-mode .pixel-orbit { --orbit-size:min(92vmin, 560px); }
     // 组件还会在元素上触发 'orbitchange' 事件：el.addEventListener('orbitchange', e => console.log(e.detail))
   })();
 </script>
+<script>if(new URLSearchParams(location.search).get("display")==="1")document.documentElement.classList.add("display-mode");</script>
 </body>
 </html>
