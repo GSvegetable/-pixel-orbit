@@ -20,8 +20,12 @@ iframe{display:block;width:100%;height:100%;border:0;background:transparent}
   const page = scene === "planet" ? "pixel-orbit-planet.html" : "pixel-orbit.html";
   const artwork = document.getElementById("orbit-artwork");
   let activeComposition = composition;
+  let artworkReady = false;
   artwork.src = `./${page}?showcase=1&composition=${composition}&v=4`;
 
+  const announceReady = () => {
+    if (artworkReady) window.parent.postMessage({ type: "pixel-orbit-ready", scene }, "*");
+  };
   const relayComposition = next => {
     if (next !== "art" && next !== "full") return;
     activeComposition = next;
@@ -33,11 +37,14 @@ iframe{display:block;width:100%;height:100%;border:0;background:transparent}
 
     // The artwork page announces readiness only after its first rendered frames.
     if (event.source === artwork.contentWindow && event.data.type === "pixel-orbit-ready") {
-      window.parent.postMessage({ type: "pixel-orbit-ready", scene }, "*");
+      artworkReady = true;
+      announceReady();
       return;
     }
 
-    if (event.source !== window.parent || event.data.type !== "pixel-orbit-composition") return;
+    if (event.source !== window.parent) return;
+    if (event.data.type === "pixel-orbit-ping") { announceReady(); return; }
+    if (event.data.type !== "pixel-orbit-composition") return;
     relayComposition(event.data.composition);
   });
 </script>
