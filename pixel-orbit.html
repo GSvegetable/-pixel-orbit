@@ -202,19 +202,21 @@ html.showcase-mode main {
   margin:0; padding:0; overflow:hidden;
 }
 html.showcase-mode .pixel-orbit {
-  position:absolute; left:50%; top:50%;
-  width:min(92vmin,560px); margin:0;
+  /* Center with auto margins; reserve transform for vertical motion and scale. */
+  position:absolute;
+  left:0; right:0; top:50%;
+  width:min(92vmin,560px);
+  margin:0 auto;
   transform-origin:top center;
-  transform:translate(-50%,-50%) scale(1);
+  transform:translateY(-50%) scale(1);
   transition:top 620ms cubic-bezier(.22,.8,.2,1),transform 620ms cubic-bezier(.22,.8,.2,1);
   will-change:transform,top;
 }
 html.showcase-art-mode .pixel-orbit {
-  /* Home preview: horizontally centered, deliberately lower, with clear headroom.
-     Expanded/full composition returns to top:50% and true viewport center. */
+  /* Home preview: horizontally centered, deliberately lower, with clear headroom. */
   top:20vh;
   transform-origin:top center;
-  transform:translate(-50%,0) scale(1.36);
+  transform:scale(1.36);
 }
 @media(prefers-reduced-motion:reduce) {
   html.showcase-mode .pixel-orbit { transition-duration:.01ms; }
