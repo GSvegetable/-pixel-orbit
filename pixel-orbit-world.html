@@ -373,7 +373,7 @@ html.showcase-full-mode main{transform:none}
 <script>
   // ---------- 页面胶水代码：只用到组件的公开 API ----------
   (() => {
-    const el = document.querySelector('.pixel-orbit'); const ring = el.__pixelOrbit;
+    const el = document.querySelector('.pixel-orbit'); const ring = el.__pixelOrbit || window.PixelOrbit.mount(el);
     const clock = document.getElementById('clock');
     const show = (d) => { clock.textContent = d.time + ' · ' + d.label; };
     ring.onChange(show); const [t0, l0] = el.getAttribute('aria-valuetext').split(' · '); show({ time: t0, label: l0 });
