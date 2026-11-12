@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - "pixel-orbit.html"
+      - "pixel-orbit-planet.html"
+      - "play.html"
+      - "pixel-orbit-planet.html"
+      - "play.html"
       - "index.html"
       - "lab.html"
       - "README.md"
