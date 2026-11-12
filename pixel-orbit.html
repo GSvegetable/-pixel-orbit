@@ -114,13 +114,14 @@ html.showcase-mode main {
 html.showcase-mode .pixel-orbit {
   position:absolute; left:50%; top:50%;
   width:min(92vmin,560px); margin:0;
-  transform:translate(-50%,-50%);
-  transition:width 620ms cubic-bezier(.22,.8,.2,1),top 620ms cubic-bezier(.22,.8,.2,1),transform 620ms cubic-bezier(.22,.8,.2,1);
-  will-change:width,top,transform;
+  transform-origin:top center;
+  transform:translate(-50%,-50%) scale(1);
+  transition:top 620ms cubic-bezier(.22,.8,.2,1),transform 620ms cubic-bezier(.22,.8,.2,1);
+  will-change:transform,top;
 }
 html.showcase-art-mode .pixel-orbit {
-  top:20vh; width:min(150vmin,760px);
-  transform:translate(-50%,0);
+  top:20vh;
+  transform:translate(-50%,0) scale(1.36);
 }
 @media(prefers-reduced-motion:reduce) {
   html.showcase-mode .pixel-orbit { transition-duration:.01ms; }
