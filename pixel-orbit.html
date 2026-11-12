@@ -538,13 +538,28 @@ html.showcase-art-mode .pixel-orbit {
       u32.set(renderer.render(hour, t, { calm }));
       /* Keep the scene inside the circular orbit, but discard the square canvas corners.
          This preserves the live day/night artwork while allowing the outer halo to show. */
-      const cx = N / 2, cy = N / 2, radius = 77, feather = 2.5;
+      const cx = N / 2, cy = N / 2, radius = 77, feather = 2.5, spill = 22;
       for (let y = 0; y < N; y++) {
         for (let x = 0; x < N; x++) {
           const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
-          const p = (y * N + x) * 4 + 3;
-          if (d >= radius) img.data[p] = 0;
-          else if (d > radius - feather) img.data[p] = Math.round(img.data[p] * (radius - d) / feather);
+          const p = (y * N + x) * 4;
+          const alpha = img.data[p + 3];
+          if (d >= radius) {
+            const red = img.data[p], green = img.data[p + 1], blue = img.data[p + 2];
+            /* Preserve only the renderer's warm sunlight / cool moonlight outside the ring.
+               Everything else stays transparent; the light fades smoothly into the tray. */
+            const warm = red > 145 && green > 65 && red > green * 1.18 && blue < 155;
+            const cool = blue > 105 && blue > red * 1.16 && green > red * 1.02;
+            const distance = d - radius;
+            if (distance <= spill && (warm || cool)) {
+              const fade = Math.pow(1 - distance / spill, 1.65);
+              img.data[p + 3] = Math.round(alpha * fade);
+            } else {
+              img.data[p + 3] = 0;
+            }
+          } else if (d > radius - feather) {
+            img.data[p + 3] = Math.round(alpha * (radius - d) / feather);
+          }
         }
       }
       ctx.putImageData(img, 0, 0);
