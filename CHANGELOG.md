@@ -17,6 +17,21 @@ Pixel Orbit 的独立项目版本记录。网站作品集中的嵌入展示与�
 - Pixel Orbit quality workflow passed for the showcase integration changes.
 - Browser-level visual acceptance on the hosted site remains a separate deployment check.
 
+## v1.2.0 — 2026-11-12
+
+### Added
+- 星球版加入基于 UTC 的太阳天文位置计算，使用太阳赤经、赤纬与格林尼治恒星时确定全球一致的受光方向。
+- 根据地球恒星自转角更新球面纹理，并通过太阳赤纬呈现地轴倾斜带来的季节性昼夜分布。
+- 现实时间模式按真实时间运行；手动调节与自动漫游继续可用，自动漫游会加速推进模拟日期。
+
+### Changed
+- 保留原有像素渲染、轨道拖动、昼夜控制与作品集展示结构。
+- 星球版的外部光晕与球面照明使用同一套天文太阳方向。
+
+### Notes
+- 星球地形仍为程序生成的艺术化像素纹理，不是具有真实国界和地名的地理底图；天文光照模型不等于地理地图定位。
+- 太阳位置采用适合视觉模拟的低阶天文算法，并非高精度天文台/导航级星历。
+
 ## Unreleased
 
 - Added continuous local real-time synchronization for both countryside and planet scenes; showcase/display embeds follow the device clock automatically, while the editor retains a manual toggle.
