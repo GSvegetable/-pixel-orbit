@@ -84,6 +84,7 @@ assert.ok(planetHtml.includes("e.type !== 'pointercancel'"), 'planet edition poi
 assert.ok(planetHtml.includes('Number.isFinite(seconds) && seconds > 0'), 'planet autoplay API must reject invalid durations');
 assert.ok(planetHtml.includes('if (el.__pixelOrbit === api) delete el.__pixelOrbit'), 'planet destroy must release the mount marker');
 assert.ok(planetHtml.includes('setRealTimeSync(enabled)'), 'planet edition must expose real-time synchronization');
+assert.ok(planetHtml.includes("const ring = orbitEl.__pixelOrbit || window.PixelOrbit.mount(orbitEl)"), 'planet page controller must mount synchronously when DOMContentLoaded has not fired');
 assert.ok(planetHtml.includes("query.get('display') === '1'"), 'planet display mode must follow local real time');
 assert.ok(html.includes("query.get('display') === '1'"), 'countryside display mode must follow local real time');
 
