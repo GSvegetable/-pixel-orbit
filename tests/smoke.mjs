@@ -83,7 +83,7 @@ assert.ok(lab.includes('pixel-orbit-planet.html?lab=1'), 'lab must load the focu
 assert.ok(html.includes('lab-mode main>.control-shell'), 'countryside editor must use the focused laboratory layout');
 assert.ok(planetHtml.includes('lab-mode main>.row'), 'planet editor must use the focused laboratory layout');
 assert.ok(lab.includes('title="Pixel Orbit parameter laboratory"'), 'lab iframe must have an accessible title');
-assert.ok(lab.includes('loading="lazy"'), 'lab preview should defer loading until needed');
+assert.ok(lab.includes('loading="eager"'), 'lab preview should load immediately for interactive use');
 for (const apiMethod of ['setHour(18)', 'setAutoplay(48)', 'getHour()', 'isNight()', 'refreshColors()', 'destroy()']) {
   assert.ok(lab.includes(apiMethod), `lab developer reference is missing API method: ${apiMethod}`);
 }
