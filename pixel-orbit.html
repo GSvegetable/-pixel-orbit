@@ -20,6 +20,15 @@ html.showcase-mode main { width:100%; height:100%; min-height:100%; padding:0; g
 html.showcase-mode main > :not(.pixel-orbit) { display:none !important; }
 html.showcase-mode .pixel-orbit { --orbit-size:min(66vmin, 360px); }
 
+  /* Art-directed crop: deliberately oversized, top-aligned circular artwork. */
+  html.showcase-art-mode body { display:grid; place-items:start center; }
+  html.showcase-art-mode main { display:grid; place-items:start center; }
+  html.showcase-art-mode .pixel-orbit {
+    --orbit-size:min(150vmin, 760px);
+    margin-top:-2%;
+    transform:translateY(0);
+  }
+
   /* ---------- 页面：背景和文字随 --night（0 白天 → 1 夜晚）渐变 ---------- */
   :root { --night: 0; }
   * { box-sizing: border-box; }
@@ -471,6 +480,6 @@ const init=()=>{
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
-<script>(()=>{const q=new URLSearchParams(location.search);if(q.get("display")==="1")document.documentElement.classList.add("display-mode");if(q.get("showcase")==="1")document.documentElement.classList.add("showcase-mode");if(q.get("lab")==="1")document.documentElement.classList.add("lab-mode");})();</script>
+<script>(()=>{const q=new URLSearchParams(location.search);if(q.get("display")==="1")document.documentElement.classList.add("display-mode");if(q.get("showcase")==="1")document.documentElement.classList.add("showcase-mode");if(q.get("composition")==="art")document.documentElement.classList.add("showcase-art-mode");if(q.get("lab")==="1")document.documentElement.classList.add("lab-mode");})();</script>
 </body>
 </html>
