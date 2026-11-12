@@ -170,10 +170,11 @@ html.showcase-mode .pixel-orbit {
   will-change:transform,top;
 }
 html.showcase-art-mode .pixel-orbit {
-  /* Center the enlarged artwork in the showcase viewport. */
-  top:50%;
-  transform-origin:center center;
-  transform:translate(-50%,-50%) scale(1.36);
+  /* Home preview: horizontally centered, deliberately lower, with clear headroom.
+     Expanded/full composition returns to top:50% and true viewport center. */
+  top:20vh;
+  transform-origin:top center;
+  transform:translate(-50%,0) scale(1.36);
 }
 @media(prefers-reduced-motion:reduce) {
   html.showcase-mode .pixel-orbit { transition-duration:.01ms; }
