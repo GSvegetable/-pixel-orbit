@@ -22,7 +22,22 @@ iframe{display:block;width:100%;height:100%;border:0;background:transparent}
   const artwork = document.getElementById("orbit-artwork");
   let activeComposition = composition;
   let artworkReady = false;
-  artwork.src = `./${page}?showcase=1&composition=${composition}&v=6`;
+
+  // 作品页的缓存版本号不再靠人手改数字：直接拿作品文件自己的 ETag 当版本号。
+  // GitHub Pages 给每个文件都发 ETag，文件一改 ETag 就变，
+  // 浏览器于是立刻拿到新版本，不会再出现"改了但用户看到的还是旧版"。
+  const buildOf = async () => {
+    try {
+      const res = await fetch(`./${page}`, { method: "HEAD", cache: "no-store" });
+      const etag = res.headers.get("etag");
+      return etag ? etag.replace(/[^\w-]/g, "") : "";
+    } catch (_) { return ""; }
+  };
+  const loadArtwork = async () => {
+    const build = await buildOf();
+    artwork.src = `./${page}?showcase=1&composition=${composition}` + (build ? `&v=${build}` : "&v=7");
+  };
+  loadArtwork();
 
   const announceReady = () => {
     if (artworkReady) window.parent.postMessage({ type: "pixel-orbit-ready", scene }, "*");
