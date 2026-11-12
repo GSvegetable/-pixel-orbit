@@ -4,10 +4,11 @@ This project is intentionally a small, dependency-free browser experience. It is
 
 ## Runtime map
 
-- `pixel-orbit.html` is the primary countryside product page. It contains the pixel renderer, interactive orbit component, full control panel, localization and page controller.
+- `play.html` is the public-facing player: it contains only two scene choices (countryside / planet) and loads the selected scene in a clean, control-free presentation mode.
+- `pixel-orbit.html` is the countryside parameter editor. It contains the pixel renderer, interactive orbit component, full control panel, localization and page controller.
 - `pixel-orbit-planet.html` is an independent alternate visual direction: a pixel-art globe with procedural terrain, clouds, day/night lighting, orbiting sun/moon and a deliberately compact control surface.
 - `index.html` is the GitHub Pages root entry. It redirects to the main experience and includes a normal anchor fallback.
-- `lab.html` embeds the live experience and documents the visible settings, CSS theme tokens, and public instance methods.
+- `lab.html` is the parameter laboratory. Its scene selector switches between the full countryside and planet editors; it also documents CSS theme tokens and public instance methods.
 - `tests/smoke.mjs` uses Node.js built-ins only. It parses inline JavaScript, executes the actual renderer in an isolated VM, and checks important UI and lifecycle contracts.
 - `.github/workflows/quality.yml` runs the same smoke suite on relevant pushes and pull requests.
 
@@ -47,7 +48,7 @@ Use Node.js 18 or newer:
 node tests/smoke.mjs
 ```
 
-The suite checks JavaScript syntax, representative renderer output for both visual editions, expected controls and accessibility hooks, pointer-cancel handling, autoplay validation, cleanup behavior, localized settings, the root redirect, and the lab/README contract.
+The suite checks JavaScript syntax, representative renderer output for both visual editions, expected controls and accessibility hooks, pointer-cancel handling, autoplay validation, cleanup behavior, localized settings, clean display mode, the two-scene public player, the root redirect, and the parameter-lab/README contract.
 
 These are fast structural and renderer smoke checks, not a substitute for visual review in real browsers. Before changing layout, pointer interactions or responsive behavior, manually verify a narrow mobile viewport, a tablet/desktop viewport, keyboard-only use, and reduced-motion mode.
 
