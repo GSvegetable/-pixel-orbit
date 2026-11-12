@@ -27,7 +27,29 @@ html.showcase-mode body::before {
   filter:blur(34px); opacity:.9; transition:opacity 700ms ease,filter 700ms ease;
 }
 html.showcase-mode main { position:relative; z-index:1; }
-html.showcase-mode .pixel-orbit { background:transparent !important; }
+html.showcase-mode .pixel-orbit {
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+}
+html.showcase-mode .pixel-orbit::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -34%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center,
+    color-mix(in srgb, #f7c96b 48%, #5e86d8 calc(var(--night, 0) * 48%)) 0%,
+    color-mix(in srgb, #efb94f 34%, #456fbd calc(var(--night, 0) * 34%)) 30%,
+    color-mix(in srgb, #e6ad46 18%, #345b9d calc(var(--night, 0) * 22%)) 52%,
+    transparent 76%);
+  filter: blur(38px);
+  opacity: .95;
+  transform: scale(.98);
+  transition: opacity 900ms ease, filter 900ms ease;
+}
 html.showcase-mode .pixel-orbit canvas {
   filter:drop-shadow(0 0 9px color-mix(in oklab,#f3d48f 34%,#6086d0 calc(var(--night,0)*38%)))
         drop-shadow(0 0 25px color-mix(in oklab,#e5bd70 22%,#4268ad calc(var(--night,0)*24%)))
