@@ -7,7 +7,25 @@
 <title>Pixel Orbit · 像素轨道开关</title>
 <style>
 
-/* Minimal presentation mode: used by the public two-scene player. */
+/* Artwork showcase mode shared with the countryside version. */
+html.showcase-mode, html.showcase-mode body { width:100%; height:100%; min-height:100%; overflow:hidden; }
+html.showcase-mode body { display:grid; place-items:center; }
+html.showcase-mode main { width:100%; height:100%; min-height:100%; padding:0; gap:0; display:grid; place-items:center; }
+html.showcase-mode main > :not(.pixel-orbit) { display:none !important; }
+html.showcase-mode .pixel-orbit { --orbit-size:min(66vmin, 360px); }
+/* Art-directed crop: oversized artwork, shifted down to leave deliberate headroom. */
+html.showcase-art-mode body { display:grid; place-items:start center; }
+html.showcase-art-mode main {
+  display:grid;
+  place-items:start center;
+  padding-top:8vh;
+  overflow:visible;
+}
+html.showcase-art-mode .pixel-orbit {
+  --orbit-size:min(150vmin, 760px);
+  margin-top:0;
+  transform:translateY(0);
+}
 html.display-mode, html.display-mode body { width:100%; height:100%; min-height:100%; overflow:hidden; }
 html.display-mode body { display:grid; place-items:center; }
 html.display-mode main { width:100%; height:100svh; min-height:100svh; padding:0; gap:0; }
@@ -373,6 +391,6 @@ html.lab-mode main>.row button{width:100%}
     // 组件还会在元素上触发 'orbitchange' 事件：el.addEventListener('orbitchange', e => console.log(e.detail))
   })();
 </script>
-<script>(()=>{const q=new URLSearchParams(location.search);if(q.get("display")==="1")document.documentElement.classList.add("display-mode");if(q.get("lab")==="1")document.documentElement.classList.add("lab-mode");})();</script>
+<script>(()=>{const q=new URLSearchParams(location.search);if(q.get("display")==="1")document.documentElement.classList.add("display-mode");if(q.get("showcase")==="1")document.documentElement.classList.add("showcase-mode");if(q.get("composition")==="art")document.documentElement.classList.add("showcase-art-mode");if(q.get("lab")==="1")document.documentElement.classList.add("lab-mode");})();</script>
 </body>
 </html>
