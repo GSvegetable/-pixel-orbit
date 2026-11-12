@@ -1,7 +1,8 @@
 # Pixel Orbit
 
-[![Quality checks](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml/badge.svg)](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
+**Current project version: v1.1.0** · Updated 2026-11-12
 
+[![Quality checks](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml/badge.svg)](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
 
 > A tiny pixel-art world that moves with the time of day. / 一座随时间流动的像素小世界。
 
@@ -21,6 +22,20 @@
 **Lab:** https://gsvegetable.github.io/-pixel-orbit/lab.html
 
 **Quick navigation:** [主体验 · 田园版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html) · [第二视觉 · 星球版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html) · [参数实验室](https://gsvegetable.github.io/-pixel-orbit/lab.html) · [开发说明](./docs/DEVELOPMENT.md) · [更新日志](./CHANGELOG.md) · [自动化检查](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
+
+---
+
+## Latest release · v1.1.0
+
+This release adds a host-friendly showcase mode for the portfolio site:
+
+- `showcase.html` selects the countryside or planet scene using `?scene=countryside|planet`.
+- `?composition=art` renders the enlarged, intentionally cropped portfolio preview; `?composition=full` renders the complete artwork for the expanded detail view.
+- The showcase frame relays `pixel-orbit-composition` messages from the parent page to the active artwork frame, so the host can animate between compositions without navigating/reloading the scene.
+- Both scene pages keep their canvas dimensions stable and animate the artwork with CSS transforms.
+- The parent portfolio site preloads the alternate scene and crossfades between frames. The site-level implementation is documented in [gongshui-pages](https://github.com/GSvegetable/gongshui-pages).
+
+**Versioning:** Pixel Orbit uses semantic versions. Showcase integration and other backward-compatible feature additions increment MINOR; compatible fixes increment PATCH; breaking API or file-structure changes increment MAJOR. See [CHANGELOG.md](./CHANGELOG.md) for the release history.
 
 ---
 
