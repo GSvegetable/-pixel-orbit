@@ -27,7 +27,7 @@ for (const feature of [
   'data-preset="18"', 'data-preset="23"', 'btn-auto',
   'prefers-reduced-motion', 'ResizeObserver', 'IntersectionObserver',
   'orbitchange', 'aria-valuetext', 'refreshColors', 'destroy()',
-  'window.PixelOrbit.mount(el)', 'Math.abs(h - lastEmit) >= 1 / 120'
+  'window.PixelOrbit.mount(el)', 'Math.abs(h - lastEmit) >= 1 / 120', 'setRealTimeSync(enabled)', 'isRealTimeSync: () => realTimeSync'
 ]) assert.ok(html.includes(feature), `missing expected feature: ${feature}`);
 
 assert.ok(html.includes('const ring=el.__pixelOrbit||window.PixelOrbit.mount(el)'),
@@ -65,6 +65,9 @@ for (const hour of [0, 6, 12, 18, 23]) {
 assert.ok(planetHtml.includes("e.type !== 'pointercancel'"), 'planet edition pointer cancellation must not toggle the scene');
 assert.ok(planetHtml.includes('Number.isFinite(seconds) && seconds > 0'), 'planet autoplay API must reject invalid durations');
 assert.ok(planetHtml.includes('if (el.__pixelOrbit === api) delete el.__pixelOrbit'), 'planet destroy must release the mount marker');
+assert.ok(planetHtml.includes('setRealTimeSync(enabled)'), 'planet edition must expose real-time synchronization');
+assert.ok(planetHtml.includes("query.get('display') === '1'"), 'planet display mode must follow local real time');
+assert.ok(html.includes("query.get('display') === '1'"), 'countryside display mode must follow local real time');
 
 const rootEntry = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 assert.ok(rootEntry.includes('url=./play.html'), 'root entry must provide a no-JavaScript fallback redirect');

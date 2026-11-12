@@ -19,6 +19,8 @@ Pixel Orbit 的独立项目版本记录。网站作品集中的嵌入展示与�
 
 ## Unreleased
 
+- Added continuous local real-time synchronization for both countryside and planet scenes; showcase/display embeds follow the device clock automatically, while the editor retains a manual toggle.
+
 - Prevented pointer-cancel gestures from being interpreted as clicks.
 - Made component teardown complete: fallback resize listeners are removed and destroyed instances can be mounted again.
 - Validated autoplay durations and localized theme / clock choices plus accessible control labels in all three languages.

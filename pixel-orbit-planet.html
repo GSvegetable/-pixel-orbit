@@ -193,6 +193,7 @@ html.showcase-art-mode .pixel-orbit {
     <button type="button" id="btn-day"><span>☀ 白天</span></button>
     <button type="button" id="btn-night"><span>☾ 夜晚</span></button>
     <button type="button" id="btn-auto" aria-pressed="false"><span>⟳ 自动</span></button>
+    <button type="button" id="btn-now" aria-pressed="false"><span>◷ 现实时间</span></button>
   </div>
   <p class="hint">拖动圆环调整时间 · 点一下星球切换昼夜 · 键盘 ← → 微调，空格切换</p>
   <noscript><p>需要 JavaScript 才能显示像素星球。</p></noscript>
@@ -418,12 +419,13 @@ html.showcase-art-mode .pixel-orbit {
     let calm = motionQ.matches; const onMotion = () => { calm = motionQ.matches; wake(); }; if (motionQ.addEventListener) motionQ.addEventListener('change', onMotion);
 
     const now = new Date(); let hour = o.hour === 'now' ? now.getHours() + now.getMinutes() / 60 : Number(o.hour); if (!Number.isFinite(hour)) hour = 12; let target = hour; let rate = 3.2;
+    const query = new URLSearchParams(location.search); let realTimeSync = ds.realtime === 'true' || (query.get('showcase') === '1' || query.get('display') === '1');
     let drag = null; let raf = 0; let lastTs = 0; let lastDraw = 0; let visible = true; let lastPhase = ''; let lastEmit = -99; let ro = null; let io = null; let dead = false; const listeners = new Set();
 
     const unwrap = (h, ref) => h + 24 * Math.round((ref - h) / 24);
     const aheadOf = (dest, ref) => { let t = dest + 24 * Math.floor(ref / 24); if (t <= ref + 0.01) t += 24; return t; };
-    const toggle = () => { const h = mod(target, 24); target = aheadOf(h >= 6 && h < 18 ? 23 : 12, target); rate = 3.2; wake(); };
-    const setHour = (h, animate = true) => { target = unwrap(mod(h, 24), target); if (!animate || calm) hour = target; rate = 3.2; wake(); };
+    const toggle = () => { realTimeSync = false; const h = mod(target, 24); target = aheadOf(h >= 6 && h < 18 ? 23 : 12, target); rate = 3.2; wake(); };
+    const setHour = (h, animate = true) => { realTimeSync = false; target = unwrap(mod(h, 24), target); if (!animate || calm) hour = target; rate = 3.2; wake(); };
     const pointerTo = (e) => { const r = canvas.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * N - CX, ((e.clientY - r.top) / r.height) * N - CY]; };
     const hourAt = (dx, dy, moon) => mod(12 + (Math.atan2(dx, -dy) / TAU) * 24 + (moon ? 12 : 0), 24);
 
@@ -492,15 +494,17 @@ html.showcase-art-mode .pixel-orbit {
 
     const frame = (ts) => {
       raf = 0; if (dead) return; const dt = Math.min(0.1, (ts - lastTs) / 1000 || 0.016); lastTs = ts;
-      if (o.autoplay > 0 && !drag) { target += (dt * 24) / o.autoplay; hour = target; }
+      if (realTimeSync) { const now = new Date(); hour = target = now.getHours() + now.getMinutes() / 60 + (now.getSeconds() + now.getMilliseconds() / 1000) / 3600; }
+      else if (o.autoplay > 0 && !drag) { target += (dt * 24) / o.autoplay; hour = target; }
       else { const d = target - hour; if (calm || Math.abs(d) < 0.0006) hour = target; else hour += d * (1 - Math.exp(-rate * dt)); }
-      const moving = Math.abs(target - hour) > 0.0006 || o.autoplay > 0 || !!drag;
+      const moving = realTimeSync || Math.abs(target - hour) > 0.0006 || o.autoplay > 0 || !!drag;
       if (moving || ts - lastDraw > 33) { draw(ts / 1000); lastDraw = ts; publish(); }
       if (visible && !document.hidden && (!calm || moving)) raf = requestAnimationFrame(frame);
     };
     function wake() { if (!raf && !dead) { lastTs = performance.now(); raf = requestAnimationFrame(frame); } }
 
     const down = (e) => {
+      realTimeSync = false;
       if (e.button !== undefined && e.button !== 0) return; const [dx, dy] = pointerTo(e); const r = Math.hypot(dx, dy); if (r > 76) return;
       const sun = ((hour - 12) / 24) * TAU; const sx = Math.sin(sun) * BEAD_R, sy = -Math.cos(sun) * BEAD_R;
       const onSun = Math.hypot(dx - sx, dy - sy) < 9; const onMoon = Math.hypot(dx + sx, dy + sy) < 9;
@@ -519,7 +523,7 @@ html.showcase-art-mode .pixel-orbit {
       if (e.key === 'ArrowRight' || e.key === 'ArrowUp') target += big; else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') target -= big;
       else if (e.key === 'PageUp') target += 3; else if (e.key === 'PageDown') target -= 3; else if (e.key === 'Home') target = aheadOf(12, target - 0.02); else if (e.key === 'End') target = aheadOf(24, target - 0.02);
       else if (e.key === ' ' || e.key === 'Enter') toggle(); else used = false;
-      if (used) { rate = 8; e.preventDefault(); wake(); }
+      if (used) { realTimeSync = false; rate = 8; e.preventDefault(); wake(); }
     };
     el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('keydown', key);
     if (window.ResizeObserver) { ro = new ResizeObserver(fit); ro.observe(el); } else window.addEventListener('resize', fit);
@@ -528,7 +532,9 @@ html.showcase-art-mode .pixel-orbit {
     fit(); draw(0); publish(); wake();
 
     const api = {
-      el, setHour, toggle, getHour: () => mod(hour, 24), isNight: () => nightOf(hour) > 0.5, setAutoplay(s) { const seconds = Number(s); o.autoplay = Number.isFinite(seconds) && seconds > 0 ? Math.max(1, seconds) : 0; wake(); },
+      el, setHour, toggle, getHour: () => mod(hour, 24), isNight: () => nightOf(hour) > 0.5, isRealTimeSync: () => realTimeSync,
+      setRealTimeSync(enabled) { realTimeSync = !!enabled; if (realTimeSync) { o.autoplay = 0; const now = new Date(); hour = target = now.getHours() + now.getMinutes() / 60 + (now.getSeconds() + now.getMilliseconds() / 1000) / 3600; } wake(); return realTimeSync; },
+      setAutoplay(s) { realTimeSync = false; const seconds = Number(s); o.autoplay = Number.isFinite(seconds) && seconds > 0 ? Math.max(1, seconds) : 0; wake(); },
       refreshColors() { renderer = PO.createRenderer(readColors(el)); draw(performance.now() / 1000); }, onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
       destroy() { dead = true; cancelAnimationFrame(raf); el.removeEventListener('pointerdown', down); el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); el.removeEventListener('keydown', key); document.removeEventListener('visibilitychange', onVis); if (ro) ro.disconnect(); else window.removeEventListener('resize', fit); if (io) io.disconnect(); if (motionQ.removeEventListener) motionQ.removeEventListener('change', onMotion); canvas.remove(); listeners.clear(); if (el.__pixelOrbit === api) delete el.__pixelOrbit; if (o.sync === 'root') document.documentElement.style.removeProperty('--night'); },
     };
@@ -546,10 +552,12 @@ html.showcase-art-mode .pixel-orbit {
     const clock = document.getElementById('clock');
     const show = (d) => { clock.textContent = d.time + ' · ' + d.label; };
     ring.onChange(show); show({ time: document.querySelector('.pixel-orbit').getAttribute('aria-valuetext').split(' · ')[0], label: document.querySelector('.pixel-orbit').getAttribute('aria-valuetext').split(' · ')[1] });
-    document.getElementById('btn-day').onclick = () => ring.setHour(12);
-    document.getElementById('btn-night').onclick = () => ring.setHour(23);
+    document.getElementById('btn-day').onclick = () => { ring.setRealTimeSync(false); document.getElementById('btn-now').setAttribute('aria-pressed','false'); ring.setHour(12); };
+    document.getElementById('btn-night').onclick = () => { ring.setRealTimeSync(false); document.getElementById('btn-now').setAttribute('aria-pressed','false'); ring.setHour(23); };
     const auto = document.getElementById('btn-auto');
-    auto.onclick = () => { const on = auto.getAttribute('aria-pressed') !== 'true'; auto.setAttribute('aria-pressed', on); ring.setAutoplay(on ? 48 : 0); };
+    auto.onclick = () => { const on = auto.getAttribute('aria-pressed') !== 'true'; if(on){ring.setRealTimeSync(false);document.getElementById('btn-now').setAttribute('aria-pressed','false');} auto.setAttribute('aria-pressed', on); ring.setAutoplay(on ? 48 : 0); };
+    const nowButton=document.getElementById('btn-now');
+    nowButton.onclick=()=>{const on=!ring.isRealTimeSync();ring.setRealTimeSync(on);nowButton.setAttribute('aria-pressed',String(on));if(on){auto.setAttribute('aria-pressed','false');ring.setAutoplay(0);}};
     // 组件还会在元素上触发 'orbitchange' 事件：el.addEventListener('orbitchange', e => console.log(e.detail))
   })();
 </script>
