@@ -20,14 +20,19 @@ html.showcase-mode main { width:100%; height:100%; min-height:100%; padding:0; g
 html.showcase-mode main > :not(.pixel-orbit) { display:none !important; }
 html.showcase-mode .pixel-orbit { --orbit-size:min(66vmin, 360px); }
 
-  /* Art-directed crop: deliberately oversized, top-aligned circular artwork. */
-  html.showcase-art-mode body { display:grid; place-items:start center; }
-  html.showcase-art-mode main { display:grid; place-items:start center; }
-  html.showcase-art-mode .pixel-orbit {
-    --orbit-size:min(150vmin, 760px);
-    margin-top:-2%;
-    transform:translateY(0);
-  }
+/* Art-directed crop: oversized artwork, shifted down to leave deliberate headroom. */
+html.showcase-art-mode body { display:grid; place-items:start center; }
+html.showcase-art-mode main {
+  display:grid;
+  place-items:start center;
+  padding-top:8vh;
+  overflow:visible;
+}
+html.showcase-art-mode .pixel-orbit {
+  --orbit-size:min(150vmin, 760px);
+  margin-top:0;
+  transform:translateY(0);
+}
 
   /* ---------- 页面：背景和文字随 --night（0 白天 → 1 夜晚）渐变 ---------- */
   :root { --night: 0; }
