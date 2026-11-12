@@ -96,6 +96,9 @@ assert.equal(worldApi.size, 168, 'third edition renderer should remain 168 pixel
 const worldPixels = worldApi.createRenderer().render(12, 0, { calm: true });
 assert.equal(worldPixels.length, 168 * 168, 'third edition renderer should return a 168×168 pixel buffer');
 assert.ok(new Set(worldPixels).size > 10, 'third edition should render a varied pixel palette');
+assert.ok(Array.from(worldPixels).some((pixel) => pixel !== 0), 'third edition should not render a blank frame');
+assert.ok(worldHtml.includes('const ring = el.__pixelOrbit || window.PixelOrbit.mount(el)'),
+  'third edition controller must mount the renderer before binding controls');
 assert.ok(html.includes('display-mode main > :not(.pixel-orbit)'), 'countryside display mode must hide its parameter UI');
 assert.ok(planetHtml.includes('display-mode main > :not(.pixel-orbit)'), 'planet display mode must hide its parameter UI');
 assert.ok(lab.includes('pixel-orbit-planet.html?lab=1'), 'lab must load the focused planet editor');
