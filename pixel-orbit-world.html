@@ -332,7 +332,7 @@ html.showcase-art-mode .pixel-orbit{
       }
     };
     const draw = (t) => { u32.set(renderer.render(hour, t, { calm })); ctx.putImageData(img, 0, 0); };
-    const fit = () => { const dpr = window.devicePixelRatio || 1; const w = el.clientWidth || N; const k = Math.max(1, Math.floor((w * dpr) / N)); canvas.style.width = canvas.style.height = (N * k) / dpr + 'px'; };
+    const fit = () => { const dpr = window.devicePixelRatio || 1; const w = el.clientWidth || N; /* Match the 152px editions' CSS pixel pitch, not this scene's larger 168px buffer. */ const k = Math.max(1, Math.floor((w * dpr) / 152)); const size = (N * k) / dpr; canvas.style.width = canvas.style.height = size + 'px'; };
 
     const frame = (ts) => {
       raf = 0; if (dead) return; const dt = Math.min(0.1, (ts - lastTs) / 1000 || 0.016); lastTs = ts;
