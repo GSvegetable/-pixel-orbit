@@ -302,7 +302,9 @@ html.showcase-art-mode .pixel-orbit {
       const hourAngle = astro ? Math.atan2(Math.sin(astro.gmst - astro.ra), Math.cos(astro.gmst - astro.ra)) : ((legacyHour - 12) / 24) * TAU;
       const solarUp = astro ? Math.cos(astro.dec) * Math.cos(hourAngle) : Math.cos(hourAngle);
       const hh = astro ? ((12 + hourAngle * 12 / Math.PI) % 24 + 24) % 24 : legacyHour;
-      const sx = Math.sin(hourAngle), sy = -Math.cos(hourAngle), cs = Math.cos(hourAngle);
+      // The orbit bead remains the visitor's local-time control; globe illumination is global.
+      const controlAngle = ((legacyHour - 12) / 24) * TAU;
+      const sx = Math.sin(controlAngle), sy = -Math.cos(controlAngle), cs = Math.cos(hourAngle);
       let Lx, Ly, Lz;
       if (astro) {
         // The sun vector is fixed in the inertial view; the globe texture rotates
