@@ -590,7 +590,8 @@ html.showcase-art-mode .pixel-orbit {
 <script>
   // ---------- 页面胶水代码：只用到组件的公开 API ----------
   (() => {
-    const ring = document.querySelector('.pixel-orbit').__pixelOrbit;
+    const orbitEl = document.querySelector('.pixel-orbit');
+    const ring = orbitEl.__pixelOrbit || window.PixelOrbit.mount(orbitEl);
     const clock = document.getElementById('clock');
     const show = (d) => { clock.textContent = d.time + ' · ' + d.label; };
     ring.onChange(show); show({ time: document.querySelector('.pixel-orbit').getAttribute('aria-valuetext').split(' · ')[0], label: document.querySelector('.pixel-orbit').getAttribute('aria-valuetext').split(' · ')[1] });
