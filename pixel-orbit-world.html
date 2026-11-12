@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Orbit · 像素环形世界</title>
+<style>
+  /* ---------- 页面：背景和文字随 --night（0 白天 → 1 夜晚）渐变 ---------- */
+  :root { --night: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100svh; display: grid; place-items: center;
+    font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: #f2e8d2; color: #1b2146;
+    background: color-mix(in oklab, #f2e8d2 calc((1 - var(--night)) * 100%), #0c1030);
+    color: color-mix(in oklab, #1b2146 calc((1 - var(--night)) * 100%), #f5ecd9);
+  }
+  main { display: grid; gap: 1.5rem; justify-items: center; padding: 2rem 1rem; text-align: center; }
+  h1 { margin: 0; font-size: 1rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+  .hint { margin: 0; opacity: .65; font-size: .8rem; }
+  output { font-size: 1.4rem; letter-spacing: .12em; font-variant-numeric: tabular-nums; min-height: 1.6em; }
+  .row { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
+  button {
+    font: inherit; color: inherit; background: transparent; cursor: pointer; padding: .45rem .9rem;
+    border: 2px solid currentColor; border-radius: 0; box-shadow: 3px 3px 0 currentColor; transition: transform .08s, box-shadow .08s;
+  }
+  button:hover { transform: translate(1px, 1px); box-shadow: 2px 2px 0 currentColor; }
+  button:active { transform: translate(3px, 3px); box-shadow: 0 0 0 currentColor; }
+  button:focus-visible { outline: 3px solid #efa02c; outline-offset: 3px; }
+  button[aria-pressed="true"] { transform: translate(3px, 3px); box-shadow: inset 0 0 0 2px currentColor; }
+
+  /* ---------- 组件：.pixel-orbit ---------- */
+  .pixel-orbit {
+    /* 想换配色只改这 5 个变量，画面里所有颜色都由它们推导出来 */
+    --orbit-bg: #f5ecd9; --orbit-surface: #8c9a62; --orbit-fg: #1b2146; --orbit-muted: #7f97b3; --orbit-accent: #efa02c;
+    --orbit-size: min(84vw, 460px);
+    width: var(--orbit-size); aspect-ratio: 1; display: grid; place-items: center;
+    border-radius: 50%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .pixel-orbit:active { cursor: grabbing; }
+  .pixel-orbit:focus-visible { outline: 3px solid var(--orbit-accent); outline-offset: 8px; }
+  .pixel-orbit canvas { display: block; image-rendering: pixelated; pointer-events: none; filter: drop-shadow(0 .9rem 1.4rem rgb(0 0 0 / .3)); }
+
+/* Portfolio and clean-player embedding modes for the third visual edition. */
+html.display-mode,html.display-mode body{width:100%;height:100%;min-height:100%;overflow:hidden}
+html.display-mode body{display:grid;place-items:center}
+html.display-mode main{width:100%;height:100svh;min-height:100svh;padding:0;gap:0;align-content:center}
+html.display-mode main>:not(.pixel-orbit){display:none!important}
+html.display-mode .pixel-orbit{--orbit-size:min(64svh,88vw,520px)}
+html.showcase-mode,html.showcase-mode body{background:transparent!important;background-color:transparent!important}
+html.showcase-mode body{position:relative;isolation:isolate}
+html.showcase-mode body::before{content:"";position:fixed;z-index:0;left:50%;top:50%;width:min(105vmin,760px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(circle,color-mix(in oklab,#e8c77f 26%,#547cc5 calc(var(--night,0)*28%)) 0%,color-mix(in oklab,#d9b66f 15%,#365b9c calc(var(--night,0)*20%)) 30%,transparent 70%);filter:blur(34px);opacity:.9}
+html.showcase-mode main{position:relative;z-index:1;transition:transform .38s cubic-bezier(.22,.8,.2,1)}
+html.showcase-art-mode main{transform:translateY(-2%) scale(1.025)}
+html.showcase-full-mode main{transform:none}
+@media(prefers-reduced-motion:reduce){html.showcase-mode main{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Pixel Orbit</h1>
+  <!-- data-hour: "now"（本地时间）或 0–24；data-sync="root" 会把 --night 写到 <html>，让整个页面跟着变；data-autoplay="60" 表示 60 秒转一天 -->
+  <div class="pixel-orbit" data-pixel-orbit data-hour="now" data-sync="root" aria-label="昼夜环形世界开关"></div>
+  <output id="clock" aria-live="off"></output>
+  <div class="row">
+    <button type="button" id="btn-day"><span>☀ 白天</span></button>
+    <button type="button" id="btn-night"><span>☾ 夜晚</span></button>
+    <button type="button" id="btn-auto" aria-pressed="false"><span>⟳ 自动</span></button>
+  </div>
+  <p class="hint">拖动圆环、太阳或月亮调整时间 · 点一下天空切换昼夜 · 键盘 ← → 微调，空格切换</p>
+  <noscript><p>需要 JavaScript 才能显示像素世界。</p></noscript>
+</main>
+
+<script>
+/* ============================================================
+ *  Pixel Orbit —— 像素环形世界开关
+ *  圆形窗口里是一座田园小屋，窗口外的表盘圆环上有一枚旋钮（白天是太阳、夜里是月亮）。
+ *  拖动圆环调整时间；点一下画面（或旋钮）在白天 / 夜晚之间切换。
+ *  纯 JS，无依赖。调色只读取 5 个 CSS 变量，所有颜色都来自这 5 组 4 阶色带。
+ * ============================================================ */
+(() => {
+  'use strict';
+  const N = 168, CX = 84, CY = 84;            // 画布 168×168 像素，圆心 (84,84)
+  const TAU = Math.PI * 2;
+  const clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
+  const mix = (a, b, t) => a + (b - a) * t;
+  const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const bay = (x, y) => (BAYER[(y & 3) * 4 + (x & 3)] + 0.5) / 16;   // 4×4 有序抖动阈值 0..1
+  const hash = (a, b, c = 0) => { let t = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263) ^ Math.imul(c | 0, 1274126177); t = Math.imul(t ^ (t >>> 13), 1274126177); return ((t ^ (t >>> 16)) >>> 0) / 4294967296; };
+
+  // ---------- 调色：5 个基色各生成 4 阶明度（OKLab），共 20 色 ----------
+  const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const gam = (v) => { v = clamp(v); return 255 * (v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055); };
+  const toLab = ([r, g, b]) => { const lr = lin(r), lg = lin(g), lb = lin(b); const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb), m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb), s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb); return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s]; };
+  const fromLab = (L, a, b) => { const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3, m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3, s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3; return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s]; };
+  const tone = (rgb, L) => { const [, a, b] = toLab(rgb); let c = Math.hypot(a, b); const h = Math.atan2(b, a); for (let i = 0; i < 24; i++) { const o = fromLab(L, c * Math.cos(h), c * Math.sin(h)); if (o.every((v) => v > -0.002 && v < 1.002)) return o.map(gam); c *= 0.9; } return fromLab(L, 0, 0).map(gam); };
+  const STEPS = [[0.76, 0.85, 0.93, 0.985], [0.4, 0.52, 0.64, 0.76], [0.17, 0.25, 0.33, 0.44], [0.5, 0.62, 0.74, 0.86], [0.5, 0.66, 0.8, 0.92]];
+  const DEFAULTS = { bg: [245, 236, 217], surface: [140, 154, 98], fg: [27, 33, 70], muted: [127, 151, 179], accent: [239, 160, 44] };
+  // 色带编号：C 奶油(bg) · G 草绿(surface) · I 深靛(fg) · U 雾蓝(muted) · A 琥珀(accent)，每组 +0..+3 由暗到亮
+  const C = 0, G = 4, I = 8, U = 12, A = 16;
+  const buildPalette = (colors = {}) => {
+    const src = { ...DEFAULTS, ...colors }; const out = new Uint32Array(20);
+    [src.bg, src.surface, src.fg, src.muted, src.accent].forEach((rgb, r) => STEPS[r].forEach((L, s) => { const [R, Gc, B] = tone(rgb, L); out[r * 4 + s] = (255 << 24) | (Math.round(B) << 16) | (Math.round(Gc) << 8) | Math.round(R); }));
+    return out;
+  };
+
+
+
+  // ---------- 一天中的天空：每个关键时刻 4 个色阶（上 → 下）。星球上每个方向有各自的「当地时间」 ----------
+  const SKY = [
+    [12, [U + 1, U + 2, U + 3, U + 3]], [16.5, [U + 1, U + 2, U + 3, U + 3]], [18, [I + 3, U + 1, A + 2, A + 3]], [19.4, [I + 1, I + 3, U, A + 1]], [21, [I, I, I + 1, I + 2]], [24, [I, I, I, I + 1]],
+  ];
+  // 材质：每种材质 4 个色阶 [夜, 黄昏, 金色时刻, 白天]（思路和你原项目的 MATS 一样）
+  const MATS = [
+    ['hillFar', [I + 1, I + 3, U + 1, U + 2]], ['hillNear', [I, I + 2, U, U + 1]], ['grass', [I + 1, G, G + 1, G + 2]], ['grassLt', [I + 2, G + 1, G + 2, G + 3]], ['grassDk', [I, I + 1, G, G + 1]],
+    ['leaf', [I, I + 1, G, G + 1]], ['leafMid', [I + 1, G, G + 1, G + 2]], ['leafLt', [I + 2, G + 1, G + 2, G + 3]], ['trunk', [I + 1, I + 3, A, A]], ['trunkLt', [I + 2, A, A + 1, A + 1]],
+    ['wall', [I + 2, U + 1, A + 3, C + 3]], ['wallWarm', [I + 1, U, A + 1, A + 2]], ['roof', [I, I + 1, I + 2, I + 3]], ['roofLt', [I + 1, I + 2, I + 3, U]], ['roofRed', [I + 1, I + 3, A, A + 1]],
+    ['wood', [I + 1, I + 3, A, A]], ['woodLt', [I + 2, A, A + 1, A + 1]], ['win', [A + 3, A + 2, U + 2, U + 1]], ['stone', [I + 1, I + 2, U, U + 1]], ['stoneLt', [I + 3, U, U + 1, U + 2]],
+    ['flowerA', [I + 2, A, A + 2, A + 2]], ['flowerC', [I + 3, U + 1, C + 3, C + 3]], ['water', [I + 1, I + 3, U, U + 1]], ['waterLt', [I + 3, U, U + 2, U + 3]],
+    ['soil', [I + 1, I + 3, A, A]], ['soilDk', [I, I + 1, I + 3, I + 3]], ['rock', [I + 1, I + 2, I + 3, U]], ['rockLt', [I + 2, I + 3, U, U + 1]], ['rockDk', [I, I + 1, I + 2, I + 3]], ['snow', [I + 2, U, C + 2, C + 3]],
+    ['crystal', [C + 3, U + 3, U + 2, U + 2]], ['lantern', [A + 3, A + 3, A + 2, A + 1]], ['smoke', [I + 3, U, C + 2, C + 3]], ['glow', [A + 1, A, A, A]], ['hair', [I, I, I + 1, I + 1]],
+    ['skin', [I + 3, A + 1, A + 3, A + 3]], ['shirt', [I + 2, A, A + 1, A + 2]], ['pants', [I + 1, I + 2, I + 3, I + 2]],
+  ];
+  const M = {}; MATS.forEach(([name], i) => { M[name] = i + 1; });            // 0 = 空（天空）
+  const LAD = MATS.map(([, l]) => l);
+  const RG = 62, W = 390, H = 34, HB = 5;                                      // 地面（圆环内壁）半径；全景带宽 390（=内壁周长），高 34（-5..28）
+  const ORB = 24, R_OUT = 80.6;                                                // 太阳月亮的轨道半径 / 圆环外沿
+  const WALKER = ['.hhh.', '.hsh.', '.ttt.', 'ttttt', '.ttt.', '.ppp.', '.p.p.'];
+  const WCH = { h: M.hair, s: M.skin, t: M.shirt, p: M.pants };
+
+
+  const createRenderer = (colors) => {
+    const pal = buildPalette(colors); const buf = new Uint32Array(N * N);
+    // ============ 1. 全景带：把一整圈风景画成一条长图，再用极坐标卷到圆环内壁上 ============
+    // 约定：u 沿内壁向右（屏幕上 = 逆时针，从正下方起算），h = 离开地面的高度（朝圆心为正）
+    const stM = new Uint8Array(W * H), stS = new Int8Array(W * H);          // 材质 / 受光侧（-100 左 … +100 右）
+    const sp = (u, h, m, s = 0) => { u = ((Math.round(u) % W) + W) % W; h = Math.round(h); const iv = h + HB; if (iv < 0 || iv >= H) return; stM[iv * W + u] = m; stS[iv * W + u] = Math.round(clamp(s, -1, 1) * 100); };
+    const sx = (x, half) => clamp(x / half, -1, 1);
+    const box = (uc, x0, x1, h0, h1, m, half) => { for (let x = x0; x <= x1; x++) for (let h = h0; h <= h1; h++) sp(uc + x, h, m, sx(x, half)); };
+    const n2 = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); return mix(mix(hash(xi, yi, 5), hash(xi + 1, yi, 5), u), mix(hash(xi, yi + 1, 5), hash(xi + 1, yi + 1, 5), u), v); };
+    const deg = (d) => (d / 360) * W;
+    const cottage = (uc) => {
+      box(uc, -12, 12, 0, 1, M.stone, 12); box(uc, -11, 11, 2, 12, M.wall, 11);
+      for (let x = -11; x <= 11; x += 1) for (let h = 3; h <= 12; h += 3) if ((x + h) % 4 === 0) sp(uc + x, h, M.wallWarm, sx(x, 11));
+      box(uc, -13, 13, 13, 13, M.wood, 13);
+      for (let h = 14; h <= 23; h++) { const hw = Math.round(13.4 - (h - 14) * 1.32); if (hw < 1) { sp(uc, h, M.roofLt, 0); continue; } for (let x = -hw; x <= hw; x++) { const even = h % 2 === 0; let m = even ? M.roofLt : M.roof; if (even && (x + ((h >> 1) & 1) * 2) % 4 === 0) m = M.roof; sp(uc + x, h, m, sx(x, 13)); } }
+      for (let x = 5; x <= 9; x++) for (let h = 16; h <= 25; h++) sp(uc + x, h, h === 25 ? M.stoneLt : (x === 5 ? M.stoneLt : M.stone), x === 5 ? -0.6 : 0.6);
+      box(uc, -2, 2, 2, 9, M.wood, 3); box(uc, -1, 1, 3, 8, M.woodLt, 3); sp(uc + 1, 5, M.lantern, 0); sp(uc - 2, 10, M.wood, 0); sp(uc + 2, 10, M.wood, 0); sp(uc, 10, M.wood, 0);
+      for (const cx of [-7, 7]) { box(uc, cx - 2, cx + 2, 6, 11, M.wood, 11); box(uc, cx - 1, cx + 1, 7, 10, M.win, 11); sp(uc + cx, 8, M.wood, 0); sp(uc + cx, 9, M.wood, 0); box(uc, cx - 2, cx + 2, 4, 5, M.wood, 11); for (let i = -2; i <= 2; i++) sp(uc + cx + i, 5, (i + cx) & 1 ? M.flowerC : M.flowerA, 0); }
+    };
+    const windmill = (uc) => {
+      for (let h = 0; h <= 16; h++) { const hw = Math.round(5.6 - h * 0.14); for (let x = -hw; x <= hw; x++) sp(uc + x, h, (h % 4 === 3 && Math.abs(x) < hw) ? M.stoneLt : M.wall, sx(x, hw)); }
+      box(uc, -1, 1, 0, 5, M.wood, 2); box(uc, -1, 0, 9, 11, M.win, 2); sp(uc + 1, 9, M.wood, 0);
+      for (let h = 17; h <= 22; h++) { const hw = Math.round(5 - (h - 17) * 0.85); for (let x = -hw; x <= hw; x++) sp(uc + x, h, h % 2 ? M.roofRed : M.roofLt, sx(x, 5)); } sp(uc, 23, M.roofLt, 0);
+    };
+    const pine = (uc, hgt, big) => {
+      sp(uc, 0, M.trunk, 0); sp(uc, 1, M.trunk, 0); sp(uc + 1, 0, M.trunk, 0.5); sp(uc + 1, 1, M.trunk, 0.5);
+      for (let h = 2; h <= hgt; h++) { const fr = (hgt - h) / (hgt - 1); let hw = Math.round(fr * big + ((hgt - h) % 4 === 0 ? 0 : 0.7)); if (h === hgt) hw = 0; for (let x = -hw; x <= hw + 1; x++) sp(uc + x, h, (hash(uc + x, h, 2) < 0.18 && fr > 0.2) ? M.leafMid : (x < -hw / 2 ? M.leafMid : M.leaf), sx(x - 0.5, Math.max(hw, 2))); }
+    };
+    const house = (uc, w, hb, rh, wallM, roofM) => {
+      const hw = (w - 1) / 2; box(uc, -Math.floor(hw), Math.ceil(hw), 0, hb, wallM, hw + 0.5);
+      for (let h = hb + 1; h <= hb + rh; h++) { const r = Math.round((hw + 1.5) * (1 - (h - hb - 1) / rh)); for (let x = -r; x <= r; x++) sp(uc + x, h, h % 2 ? roofM : M.roofLt, sx(x, hw + 1.5)); }
+      box(uc, 0, 1, 0, 3, M.wood, 2);
+      for (let wx = -Math.floor(hw) + 1; wx <= Math.ceil(hw) - 2; wx += 4) { sp(uc + wx, hb - 3, M.win, 0); sp(uc + wx + 1, hb - 3, M.win, 0); sp(uc + wx, hb - 2, M.win, 0); sp(uc + wx + 1, hb - 2, M.win, 0); }
+    };
+    const peak = (uc, hgt, hw) => { for (let x = -hw; x <= hw; x++) { const top = Math.round(hgt * (1 - Math.abs(x) / hw) + (n2(x * 0.5 + uc, 3) - 0.5) * 2.2); for (let h = 0; h <= top; h++) sp(uc + x, h, h > hgt * 0.62 + (n2(x * 0.7, h * 0.3) - 0.5) * 3 ? M.snow : (x < 0 ? M.hillFar : M.hillNear), sx(x, hw) * 1.1); } };
+    const oak = (uc) => {
+      for (let h = 0; h <= 9; h++) { sp(uc - 1, h, M.trunk, -0.6); sp(uc, h, M.trunkLt, 0); sp(uc + 1, h, M.trunk, 0.6); } sp(uc - 2, 0, M.trunk, -0.6); sp(uc + 2, 0, M.trunk, 0.6);
+      const blobs = [[0, 15, 8.2], [-6.2, 12, 5.4], [6.2, 12, 5.4], [0, 20, 4.4], [-3.6, 18.5, 4.4]];
+      for (let h = 6; h <= 25; h++) for (let x = -13; x <= 13; x++) { let inside = false; for (const [bx, bh, br] of blobs) if ((x - bx) ** 2 + (h - bh) ** 2 <= br * br) { inside = true; break; } if (!inside) continue; const v = 0.45 + (h - 15) * 0.035 + (n2(x * 0.5 + uc, h * 0.5) - 0.5) * 0.5 + (hash(x + uc, h, 9) - 0.5) * 0.2; sp(uc + x, h, v > 0.68 ? M.leafLt : v > 0.4 ? M.leafMid : M.leaf, sx(x, 11)); }
+    };
+    const pond = (uc) => { for (let x = -11; x <= 11; x++) { const d = Math.round(3.4 * (1 - (x / 11) ** 2)); for (let h = -d; h <= -1; h++) sp(uc + x, h, h === -1 ? M.waterLt : M.water, 0); } for (const x of [-12, -11, 11, 12]) { sp(uc + x, 0, M.leafMid, 0); sp(uc + x, 1, M.leaf, 0); sp(uc + x, 2, M.leaf, 0); sp(uc + x + (x < 0 ? -1 : 1), 3, M.leafMid, 0); } };
+    const fence = (uc, n) => { for (let i = 0; i < n; i++) { const x = i * 3; sp(uc + x, 1, M.wall, -0.4); sp(uc + x, 2, M.wall, -0.4); sp(uc + x, 3, M.wall, -0.4); sp(uc + x, 4, M.wall, 0); sp(uc + x + 1, 1, M.wall, 0.4); sp(uc + x + 1, 2, M.wall, 0.4); sp(uc + x + 1, 3, M.wall, 0.4); } for (let x = 0; x < n * 3 - 1; x++) { sp(uc + x, 2, M.wood, 0); } };
+    const lamppost = (uc) => { for (let h = 0; h <= 9; h++) sp(uc, h, M.stone, 0); sp(uc - 1, 10, M.stone, 0); sp(uc + 1, 10, M.stone, 0); sp(uc, 10, M.lantern, 0); sp(uc, 11, M.lantern, 0); sp(uc - 1, 11, M.stoneLt, 0); sp(uc + 1, 11, M.stoneLt, 0); sp(uc, 12, M.stoneLt, 0); };
+    const bush = (uc, hh2) => { for (let x = -2; x <= 2; x++) for (let h = 0; h <= hh2 - Math.abs(x) * 0.8; h++) sp(uc + x, h, hash(x + uc, h, 7) < 0.3 ? M.leafMid : M.leaf, sx(x, 3)); };
+    for (let u = 0; u < W; u++) { const r = hash(u, 7, 1); if (r < 0.34) { sp(u, 0, M.grassLt, 0); if (r < 0.1) sp(u, 1, M.grassLt, 0); } else if (r < 0.4) sp(u, 0, M.flowerA, 0); else if (r < 0.45) sp(u, 0, M.flowerC, 0); }
+    // 一圈风景（角度从正下方 = 正午的家开始，逆时针）
+    cottage(0); fence(deg(8), 4); pine(deg(-24), 15, 5); pine(deg(-18), 11, 4); pine(deg(-30), 12, 4); bush(deg(-13), 3); windmill(deg(27)); pine(deg(48), 13, 4); pine(deg(53), 17, 5); pine(deg(58), 10, 3);
+    pond(deg(80)); bush(deg(68), 3); bush(deg(94), 3); peak(deg(122), 22, 15); peak(deg(140), 16, 12); oak(deg(163));
+    house(deg(184), 12, 8, 5, M.wall, M.roofRed); lamppost(deg(195)); house(deg(206), 15, 11, 6, M.wallWarm, M.roof); house(deg(222), 11, 7, 5, M.wall, M.roofLt); lamppost(deg(232));
+    pine(deg(246), 14, 4); pine(deg(252), 17, 5); fence(deg(262), 4); bush(deg(276), 2); oak(deg(292)); pine(deg(318), 12, 4); pine(deg(324), 15, 5); pine(deg(330), 10, 3); bush(deg(345), 3);
+    const stE = new Uint8Array(W * H);
+    for (let iv = HB; iv < H; iv++) for (let u = 0; u < W; u++) { if (!stM[iv * W + u]) continue; const l = stM[iv * W + ((u + W - 1) % W)], rr = stM[iv * W + ((u + 1) % W)], up = iv + 1 < H ? stM[(iv + 1) * W + u] : 0; if (!l || !rr || !up) stE[iv * W + u] = 1; }
+    // ============ 2. 预计算：每个像素的半径、方向、对应的全景带坐标 ============
+    const rA = new Float32Array(N * N), sPs = new Float32Array(N * N), cPs = new Float32Array(N * N), sIdx = new Int32Array(N * N), psiA = new Float32Array(N * N);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const dx = x + 0.5 - CX, dy = y + 0.5 - CY, r = Math.hypot(dx, dy), o = y * N + x; rA[o] = r; sPs[o] = dx / r; cPs[o] = dy / r; const ps = (Math.atan2(dx, dy) + TAU) % TAU; psiA[o] = ps; const iu = Math.floor((ps / TAU) * W) % W, iv = Math.floor(RG - r) + HB; sIdx[o] = iv >= 0 && iv < H ? iv * W + iu : -1; }
+    const HV = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const c = (i / 1023) * 2 - 1; HV[i] = 12 + (Math.acos(c) * 180 / Math.PI) / 15; }
+    const dM = new Uint8Array(W * H), dS = new Int8Array(W * H);
+    const st = { smoke: [], shoot: null, shootT: 5, lastS: -1 };
+    const CLOUDS = [[20, 46, 0.011, 1], [100, 50, -0.008, 0.9], [185, 44, 0.007, 1.1], [265, 51, -0.012, 0.8], [330, 47, 0.009, 1]];
+    const BIRDS = [[0.6, 34, 0.18], [3.9, 40, -0.14]];
+
+    const render = (hour, t = 0, opts = {}) => {
+      const calm = !!opts.calm; const hh = ((hour % 24) + 24) % 24; const th = ((hh - 12) / 24) * TAU; const sn = Math.sin(th), cs = Math.cos(th);   // θ=0：太阳在正下方（正午，在家的上空）
+      const sunX = CX + sn * ORB, sunY = CY + cs * ORB, moonX = CX - sn * ORB, moonY = CY - cs * ORB;
+      const dayTone = clamp((cs + 0.35) / 0.9) * 3; const night = clamp(smooth(18.4, 20.6, hh) + (1 - smooth(4.6, 6.2, hh)));
+      dM.set(stM); dS.set(stS);
+      const dput = (u, h, m, s = 0) => { u = ((Math.round(u) % W) + W) % W; h = Math.round(h); const iv = h + HB; if (iv < 0 || iv >= H) return; dM[iv * W + u] = m; dS[iv * W + u] = Math.round(s * 100); };
+      { const hubU = deg(27), hubH = 15, ang = calm ? 0.4 : t * 0.9; for (let b = 0; b < 4; b++) { const a = ang + (b * Math.PI) / 2; for (let i = 1; i <= 12; i++) { const bu = hubU + Math.cos(a) * i, bh = hubH + Math.sin(a) * i; dput(bu, bh, M.wood, 0); if (i >= 5) { dput(bu + Math.sin(a) * 1, bh - Math.cos(a) * 1, M.wall, 0); dput(bu + Math.sin(a) * 2, bh - Math.cos(a) * 2, M.wall, 0); } } } dput(hubU, hubH, M.wood); dput(hubU + 1, hubH, M.wood); dput(hubU, hubH + 1, M.wood); dput(hubU + 1, hubH + 1, M.wood); }
+      if (!calm) for (let i = 0; i < 9; i++) { const x = Math.floor(hash(i, Math.floor(t * 3), 4) * 21) - 10; const d = Math.round(3.4 * (1 - (x / 11) ** 2)); if (d >= 2) dput(deg(80) + x, -1 - (hash(i, 9, Math.floor(t * 3)) < 0.5 ? 0 : 1), M.waterLt, 0); }
+      if (!calm) { const tk = Math.floor(t * 4); if (st.smoke.length < 14 && tk !== st.lastS && hash(tk, 3, 8) < 0.55) { st.lastS = tk; st.smoke.push({ u: 7, h: 26, a: 0, s: Math.random() * 6 }); } for (let i = st.smoke.length - 1; i >= 0; i--) { const q = st.smoke[i]; q.a += 1 / 30; q.h += 4 / 30; q.u += (0.9 + Math.sin(q.a * 2 + q.s) * 1.3) / 30; if (q.a > 2.4) st.smoke.splice(i, 1); } }
+      for (const q of st.smoke) { const sz = q.a > 1.2 ? 2 : 1; for (let dy = 0; dy < sz; dy++) for (let dx = 0; dx < sz; dx++) if (hash(Math.round(q.u) + dx, Math.round(q.h) + dy, Math.floor(q.a * 5)) < 0.9 - q.a * 0.25) dput(q.u + dx, q.h + dy, M.smoke, 0); }
+      { const wu = calm ? deg(100) : (t * 3.4 + deg(100)) % W; const fr = calm ? 0 : Math.floor(t * 4) & 1; for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) { const ch = WALKER[r][c]; if (ch === '.') continue; if (r === 6 && fr && c === 3) continue; dput(wu + c - 2, 7 - r, WCH[ch], 0); }
+        if (night > 0.3) { dput(wu + 3, 4, M.lantern, 0); dput(wu + 3, 3, M.lantern, 0); dput(wu + 2, 4, M.wood, 0); for (let i = 0; i < 24; i++) { const a = i * 2.4 + 1, rr = 3 + (i % 5); const gu = wu + 3 + Math.cos(a) * rr, gh = 3.5 + Math.sin(a) * rr * 0.8; const iv = Math.round(gh) + HB; const uu = ((Math.round(gu) % W) + W) % W; if (iv >= 0 && iv < H && dM[iv * W + uu] === 0 && hash(i, 2, 6) < 0.9 - rr * 0.1) dput(gu, gh, M.glow, 0); } } }
+      if (night > 0.3) for (const lu of [deg(195), deg(232)]) for (let i = 0; i < 30; i++) { const a = i * 2.1, rr = 2 + (i % 6); const gu = lu + Math.cos(a) * rr, gh = 10.5 + Math.sin(a) * rr * 0.8; const iv = Math.round(gh) + HB; const uu = ((Math.round(gu) % W) + W) % W; if (iv >= 0 && iv < H && dM[iv * W + uu] === 0 && hash(i, 4, 6) < 0.85 - rr * 0.09) dput(gu, gh, M.glow, 0); }
+      if (!calm && night > 0.6) { st.shootT -= 1 / 30; if (st.shootT <= 0 && !st.shoot) { st.shootT = 6 + Math.random() * 8; st.shoot = { x: 55 + Math.random() * 50, y: 50 + Math.random() * 25, a: 0 }; } if (st.shoot) { st.shoot.a += 1 / 30; if (st.shoot.a > 0.6) st.shoot = null; } }
+
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        const o = y * N + x, r = rA[o]; if (r > R_OUT + 0.4) { buf[o] = 0; continue; }
+        const sPh = sPs[o], cPh = cPs[o]; const c = sPh * sn + cPh * cs;                       // 该方向与太阳方向的夹角余弦（局部太阳高度）
+        const si = sIdx[o]; let m = 0, sSide = 0, edge = 0; if (si >= 0) { m = dM[si]; sSide = dS[si] / 100; edge = dM[si] === stM[si] ? stE[si] : 0; }
+        let idx;
+        if (m !== 0) {
+          // ---- 内壁上的物体：色阶 = 局部太阳高度 + 受光侧（太阳在左边就亮左面） ----
+          const sinRel = sn * cPh - cs * sPh; const lt = clamp((c + 0.35) / 0.9); let tf = lt * 3 + sSide * clamp(sinRel * 1.5, -1, 1) * 0.85 * lt * 1.6; if (edge) tf -= 1.35 * lt;
+          idx = LAD[m - 1][clamp(Math.round(tf + (bay(x, y) - 0.5) * 1.05), 0, 3)];
+        } else if (r >= RG) {
+          // ---- 圆环本体：草皮 → 泥土 → 岩层（水晶、卵石）→ 刻度 ----
+          const d = r - RG; const lt = clamp((c + 0.35) / 0.9); const amb = 0.9 + 1.2 * clamp((c + 0.5) / 1.5); const ps = psiA[o];
+          if (d < 2.4) { const n = n2(x * 0.3, y * 0.3); idx = LAD[(n > 0.62 ? M.grassLt : n < 0.3 ? M.grassDk : M.grass) - 1][clamp(Math.round(lt * 3 + (bay(x, y) - 0.5) * 1.05), 0, 3)]; }
+          else if (d < 8.5) { const h1 = hash(x, y, 11); const m2 = h1 < 0.08 ? M.soilDk : h1 > 0.95 ? M.stoneLt : M.soil; idx = LAD[m2 - 1][clamp(Math.round(amb + (bay(x, y) - 0.5) * 1.05), 0, 3)]; if (d < 4 && bay(x, y) < 0.4 && m2 === M.soil) idx = LAD[M.soil - 1][clamp(Math.round(amb + 0.8), 0, 3)]; }
+          else if (d < 17.4) {
+            const dx = x + 0.5 - CX, dy = y + 0.5 - CY; const band = Math.floor((d + (n2(x * 0.09, y * 0.09) - 0.5) * 4) / 3.4); const m2 = (band & 1) ? M.rockLt : M.rock;
+            const tn = 0.9 + 1.7 * lt + (bay(x, y) - 0.5) * 1.0 - (d > 14 ? 0.25 : 0); idx = LAD[m2 - 1][clamp(Math.round(tn), 0, 3)];
+            const px = Math.floor(dx / 10), py = Math.floor(dy / 10); if (hash(px, py, 31) < 0.2) { const cx = px * 10 + 5 + (hash(px, py, 32) - 0.5) * 3, cy = py * 10 + 5 + (hash(px, py, 33) - 0.5) * 3; const ex = (dx - cx) / 2.4, ey = (dy - cy) / 1.4; if (ex * ex + ey * ey < 1) idx = LAD[M.stoneLt - 1][clamp(Math.round(tn + 0.6), 0, 3)]; }
+            const gx = Math.floor(dx / 12), gy = Math.floor(dy / 12); if (hash(gx, gy, 21) < 0.12) { const cx = gx * 12 + 6 + (hash(gx, gy, 22) - 0.5) * 3, cy = gy * 12 + 6 + (hash(gx, gy, 23) - 0.5) * 3; const dd = Math.abs(dx - cx) + Math.abs(dy - cy); if (dd < 2.0) idx = dd < 1.1 ? LAD[M.crystal - 1][clamp(Math.round((1 - night) * 3), 0, 3)] : (dx - cx + dy - cy < 0 ? U + 3 : U + 2); }
+            // 24 小时刻度 + 太阳 / 月亮的宝石
+            const hf = (ps / TAU) * 24, fr = hf - Math.round(hf), kk = ((Math.round(hf) % 24) + 24) % 24, major = kk % 6 === 0, near = Math.abs(fr) * ((TAU * r) / 24);
+            if (near < 0.55 && d > 11.2 && d < (major ? 15.4 : 13.2)) idx = major ? A + 2 : U + 2;
+            const gs = Math.hypot(x + 0.5 - (CX + sn * (RG + 12.5)), y + 0.5 - (CY + cs * (RG + 12.5))), gm = Math.hypot(x + 0.5 - (CX - sn * (RG + 12.5)), y + 0.5 - (CY - cs * (RG + 12.5)));
+            if (gs < 3.9) idx = gs < 1.8 ? A + 3 : gs < 3 ? A + 2 : A + 1; else if (gm < 3.9) idx = gm < 1.8 ? C + 3 : gm < 3 ? U + 3 : U + 2;
+          } else { const lit = -sPh * 0.707 - cPh * 0.707; idx = d < 18.3 ? (lit > 0.25 ? U + 2 : lit < -0.35 ? I + 2 : U) : I; }
+        } else {
+          // ---- 圆心的天空：每个方向有自己的「当地时间」；越靠近中心越服从全局时间 ----
+          const wR = smooth(10, 38, r); const ce = cs + (c - cs) * wR; const hv = HV[Math.floor((ce + 1) * 511.5)];
+          let k = 0; while (k < SKY.length - 2 && hv >= SKY[k + 1][0]) k++; const pk = smooth(SKY[k][0], SKY[k + 1][0], hv); const key = bay(x + 2, y + 1) < pk ? SKY[k + 1][1] : SKY[k][1];
+          const pos = (0.7 + 2.3 * Math.pow(clamp((r - 4) / (RG - 8)), 1.1)); const i0 = Math.min(2, Math.floor(pos)); idx = key[bay(x, y) < pos - i0 ? i0 + 1 : i0];
+          const nightHere = smooth(19.4, 21.8, hv);
+          if (nightHere > 0.15) { const hs = hash(x, y, 9); if (hs < 0.016 && hash(x, y, 4) < nightHere && (calm || Math.sin(t * 2 + hs * 900) > -0.5)) idx = hs < 0.003 ? C + 3 : hs < 0.008 ? U + 3 : U + 2; }
+          const ds = Math.hypot(x + 0.5 - sunX, y + 0.5 - sunY), dm = Math.hypot(x + 0.5 - moonX, y + 0.5 - moonY);
+          const gsA = Math.pow(Math.max(0, 1 - ds / 24), 2) * 0.8 * clamp(dayTone / 1.2), gmA = Math.pow(Math.max(0, 1 - dm / 17), 2) * 0.5 * night;
+          if (bay(x + 3, y) < gsA) idx = dayTone > 2.2 ? C + 3 : A + 3; else if (bay(x, y + 3) < gmA) idx = U + 3;
+          const ps = psiA[o];
+          for (let ci = 0; ci < CLOUDS.length; ci++) { const cd = CLOUDS[ci]; const cph0 = (cd[0] / 360) * TAU + (calm ? 0 : t * cd[2]); let da = ps - cph0; da = ((da + Math.PI) % TAU + TAU) % TAU - Math.PI; const du = da * r, dv = r - cd[1]; const sc = cd[3];
+            const inside = (du / (8 * sc)) ** 2 + (dv / (2.5 * sc)) ** 2 < 1 || ((du + 5.5 * sc) / (5 * sc)) ** 2 + ((dv - 0.6 * sc) / (2.1 * sc)) ** 2 < 1 || ((du - 5.5 * sc) / (6 * sc)) ** 2 + ((dv - 0.6 * sc) / (1.9 * sc)) ** 2 < 1 || ((du - 1 * sc) / (4.5 * sc)) ** 2 + ((dv + 1.8 * sc) / (2 * sc)) ** 2 < 1;
+            if (inside) { const cc = Math.cos(cph0 - Math.atan2(sn, cs)); const tfc = clamp((cc + 0.35) / 0.9) * 3 - (dv > 0.5 * sc ? 0.9 : 0); idx = [I + 2, U, A + 3, C + 3][clamp(Math.round(tfc + (bay(x, y) - 0.5) * 1.05), 0, 3)]; break; } }
+          // 太阳 / 月亮的小轨道：虚线 + 每小时一个点
+          if (Math.abs(r - ORB) < 0.55) { const hf = (ps / TAU) * 24, fr = hf - Math.round(hf); const dot = Math.abs(fr) * ((TAU * ORB) / 24) < 0.6; if (dot && bay(x, y) < 0.9) idx = night > 0.5 ? U + 2 : U + 1; else if (Math.floor((ps / TAU) * 96) % 2 === 0 && bay(x + 1, y + 1) < 0.35) idx = night > 0.5 ? U + 1 : U; }
+          // 太阳
+          if (ds <= 7.2) { const hi = dayTone > 0.35; const kx = x + 0.5 - sunX, ky = y + 0.5 - sunY; idx = ds > 6 ? (hi ? A + 1 : I + 3) : ds > 4.4 ? (hi ? A + 2 : A) : (hi ? A + 3 : A + 1); if (hi && ds < 3.6 && kx + ky < 0.6) idx = C + 3; }
+          else if (ds <= 12 && ds > 8.2 && dayTone > 0.9 && !calm) { const a2 = Math.atan2(y + 0.5 - sunY, x + 0.5 - sunX) - t * 0.5; if (Math.abs(Math.sin(a2 * 4)) > 0.95) idx = A + 2; }
+          // 月亮
+          if (dm <= 6.4) { const hi = night > 0.35; const kx = x + 0.5 - moonX, ky = y + 0.5 - moonY; idx = dm > 5.4 ? (hi ? U + 2 : I + 3) : (hi ? C + 3 : U + 1); if (dm <= 5.4 && ((Math.abs(kx - 1.9) < 0.9 && Math.abs(ky + 1.7) < 0.9) || (Math.abs(kx + 1.7) < 1 && Math.abs(ky - 1.9) < 0.8) || (Math.abs(kx) < 0.7 && Math.abs(ky - 0.3) < 0.6))) idx = hi ? U + 2 : I + 3; }
+          if (!calm && dayTone > 1.5) for (const b of BIRDS) { const a = b[0] + t * b[2]; const bx = CX + Math.sin(a) * b[1], by = CY + Math.cos(a) * b[1]; const fl = Math.floor(t * 3 + b[0] * 5) & 1; const ox = x - Math.round(bx), oy = y - Math.round(by); if ((oy === (fl ? 0 : 1) && (ox === 0 || ox === 2)) || (oy === (fl ? 1 : 0) && ox === 1)) idx = I + 2; }
+          if (st.shoot) { const a = st.shoot.a; for (let q = 0; q < 7; q++) { const px = Math.round(st.shoot.x + (a * 120 - q * 1.6)), py = Math.round(st.shoot.y + (a * 50 - q * 0.6)); if (x === px && y === py) idx = q < 2 ? C + 3 : q < 4 ? U + 3 : U + 1; } }
+        }
+        buf[o] = pal[idx];
+      }
+      return buf;
+    };
+    return { render, palette: pal, size: N };
+  };
+
+  const api = { createRenderer, buildPalette, size: N, geometry: { N, CX, CY, RG: 62, ORB: 24 }, version: '1.0.0' };
+  if (typeof window !== 'undefined') window.PixelOrbit = Object.assign(window.PixelOrbit || {}, api);
+  if (typeof module !== 'undefined') module.exports = api;
+})();
+</script>
+<script>
+/* ============================================================
+ *  交互层：把渲染器挂到一个元素上
+ *  <div class="pixel-orbit" data-pixel-orbit data-hour="now"></div>
+ *  - 拖动圆环、太阳或月亮：调整时间（正下方 = 正午）
+ *  - 点一下天空：白天 ⇄ 夜晚
+ *  - 键盘：←/→/↑/↓ 调 30 分钟（Shift 或 PageUp/PageDown 调 3 小时），Home 正午，End 午夜，空格 / 回车切换
+ *  - 对外：el 上触发 `orbitchange` 事件，并写入 data-phase、--night（0~1）
+ * ============================================================ */
+(() => {
+  'use strict';
+  const PO = window.PixelOrbit; const { N, CX, CY, RG, ORB } = PO.geometry; const TAU = Math.PI * 2;
+  const mod = (v, m) => ((v % m) + m) % m;
+  const PHASES = { dawn: '清晨', day: '白天', dusk: '黄昏', night: '夜晚' };
+  const phaseOf = (h) => { h = mod(h, 24); return h >= 5 && h < 7.5 ? 'dawn' : h >= 7.5 && h < 17 ? 'day' : h >= 17 && h < 19.5 ? 'dusk' : 'night'; };
+  const nightOf = (h) => { h = mod(h, 24); const sm = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); }; return Math.min(1, sm(18.4, 20.6, h) + (1 - sm(4.6, 6.2, h))); };
+  const fmt = (h) => { h = mod(h, 24); const m = Math.round(h * 60) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+  const parseColor = (() => { let ctx = null; return (v) => { if (!v) return null; ctx = ctx || document.createElement('canvas').getContext('2d', { willReadFrequently: true }); ctx.canvas.width = ctx.canvas.height = 1; ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = v.trim(); ctx.fillRect(0, 0, 1, 1); const d = ctx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2]]; }; })();
+  const readColors = (el) => { const cs = getComputedStyle(el); const out = {}; for (const k of ['bg', 'surface', 'fg', 'muted', 'accent']) { const c = parseColor(cs.getPropertyValue('--orbit-' + k)); if (c) out[k] = c; } return out; };
+
+  const mount = (el, opts = {}) => {
+    const ds = el.dataset;
+    const o = { hour: opts.hour ?? ds.hour ?? 'now', autoplay: Number(opts.autoplay ?? ds.autoplay ?? 0), sync: opts.sync ?? ds.sync ?? '', label: opts.label ?? el.getAttribute('aria-label') ?? '昼夜轨道开关' };
+    const canvas = document.createElement('canvas'); canvas.width = N; canvas.height = N; canvas.setAttribute('aria-hidden', 'true'); el.appendChild(canvas);
+    const ctx = canvas.getContext('2d'); const img = ctx.createImageData(N, N); const u32 = new Uint32Array(img.data.buffer);
+    let renderer = PO.createRenderer(readColors(el));
+    el.setAttribute('role', 'slider'); el.setAttribute('aria-label', o.label); el.setAttribute('aria-valuemin', '0'); el.setAttribute('aria-valuemax', '24'); if (!el.hasAttribute('tabindex')) el.tabIndex = 0;
+    const motionQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false, addEventListener() {} };
+    let calm = motionQ.matches; const onMotion = () => { calm = motionQ.matches; wake(); }; if (motionQ.addEventListener) motionQ.addEventListener('change', onMotion);
+
+    const now = new Date(); let hour = o.hour === 'now' ? now.getHours() + now.getMinutes() / 60 : Number(o.hour); if (!Number.isFinite(hour)) hour = 12; let target = hour; let rate = 3.2;
+    let drag = null; let raf = 0; let lastTs = 0; let lastDraw = 0; let visible = true; let lastPhase = ''; let lastEmit = -99; let ro = null; let io = null; let dead = false; const listeners = new Set();
+
+    const unwrap = (h, ref) => h + 24 * Math.round((ref - h) / 24);
+    const aheadOf = (dest, ref) => { let t = dest + 24 * Math.floor(ref / 24); if (t <= ref + 0.01) t += 24; return t; };
+    const toggle = () => { const h = mod(target, 24); target = aheadOf(h >= 6 && h < 18 ? 23 : 12, target); rate = 3.2; wake(); };
+    const setHour = (h, animate = true) => { target = unwrap(mod(h, 24), target); if (!animate || calm) hour = target; rate = 3.2; wake(); };
+    const pointerTo = (e) => { const r = canvas.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * N - CX, ((e.clientY - r.top) / r.height) * N - CY]; };
+    const hourAt = (dx, dy, moon) => mod(12 + (Math.atan2(dx, dy) / TAU) * 24 + (moon ? 12 : 0), 24);   // 正下方 = 正午（太阳在家的正上空）
+
+    const publish = () => {
+      const h = mod(hour, 24); const ph = phaseOf(h); const n = nightOf(h);
+      el.style.setProperty('--night', n.toFixed(3)); if (o.sync === 'root') document.documentElement.style.setProperty('--night', n.toFixed(3));
+      if (ph !== lastPhase || Math.abs(h - lastEmit) > 0.02) {
+        el.dataset.phase = ph; el.setAttribute('aria-valuenow', h.toFixed(2)); el.setAttribute('aria-valuetext', fmt(h) + ' · ' + PHASES[ph]);
+        if (ph !== lastPhase || Math.abs(h - lastEmit) > 0.25) { const detail = { hour: h, phase: ph, night: n > 0.5, nightAmount: n, label: PHASES[ph], time: fmt(h) }; el.dispatchEvent(new CustomEvent('orbitchange', { detail })); listeners.forEach((fn) => fn(detail)); lastEmit = h; }
+        lastPhase = ph;
+      }
+    };
+    const draw = (t) => { u32.set(renderer.render(hour, t, { calm })); ctx.putImageData(img, 0, 0); };
+    const fit = () => { const dpr = window.devicePixelRatio || 1; const w = el.clientWidth || N; const k = Math.max(1, Math.floor((w * dpr) / N)); canvas.style.width = canvas.style.height = (N * k) / dpr + 'px'; };
+
+    const frame = (ts) => {
+      raf = 0; if (dead) return; const dt = Math.min(0.1, (ts - lastTs) / 1000 || 0.016); lastTs = ts;
+      if (o.autoplay > 0 && !drag) { target += (dt * 24) / o.autoplay; hour = target; }
+      else { const d = target - hour; if (calm || Math.abs(d) < 0.0006) hour = target; else hour += d * (1 - Math.exp(-rate * dt)); }
+      const moving = Math.abs(target - hour) > 0.0006 || o.autoplay > 0 || !!drag;
+      if (moving || ts - lastDraw > 33) { draw(ts / 1000); lastDraw = ts; publish(); }
+      if (visible && !document.hidden && (!calm || moving)) raf = requestAnimationFrame(frame);
+    };
+    function wake() { if (!raf && !dead) { lastTs = performance.now(); raf = requestAnimationFrame(frame); } }
+
+    const down = (e) => {
+      if (e.button !== undefined && e.button !== 0) return; const [dx, dy] = pointerTo(e); const r = Math.hypot(dx, dy); if (r > 76) return;
+      const sun = ((hour - 12) / 24) * TAU; const sx = Math.sin(sun) * ORB, sy = Math.cos(sun) * ORB;
+      const onSun = Math.hypot(dx - sx, dy - sy) < 10; const onMoon = Math.hypot(dx + sx, dy + sy) < 10;
+      drag = { x: e.clientX, y: e.clientY, moved: false, kind: onSun ? 'sun' : onMoon ? 'moon' : r >= RG ? 'ring' : 'sky' };
+      try { el.setPointerCapture(e.pointerId); } catch (_) {}
+      if (drag.kind === 'ring') { target = unwrap(hourAt(dx, dy, false), target); rate = 16; }
+      wake(); e.preventDefault();
+    };
+    const move = (e) => {
+      if (!drag) return; if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 4) drag.moved = true; if (!drag.moved && drag.kind !== 'ring') return;
+      const [dx, dy] = pointerTo(e); if (Math.hypot(dx, dy) < 5) return; target = unwrap(hourAt(dx, dy, drag.kind === 'moon'), target); rate = 16; wake();
+    };
+    const up = (e) => { if (!drag) return; const d = drag; drag = null; try { el.releasePointerCapture(e.pointerId); } catch (_) {} if (!d.moved && d.kind !== 'ring') toggle(); rate = 3.2; wake(); };
+    const key = (e) => {
+      const big = e.shiftKey ? 3 : 0.5; let used = true;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') target += big; else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') target -= big;
+      else if (e.key === 'PageUp') target += 3; else if (e.key === 'PageDown') target -= 3; else if (e.key === 'Home') target = aheadOf(12, target - 0.02); else if (e.key === 'End') target = aheadOf(24, target - 0.02);
+      else if (e.key === ' ' || e.key === 'Enter') toggle(); else used = false;
+      if (used) { rate = 8; e.preventDefault(); wake(); }
+    };
+    el.addEventListener('pointerdown', down); el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('keydown', key);
+    if (window.ResizeObserver) { ro = new ResizeObserver(fit); ro.observe(el); } else window.addEventListener('resize', fit);
+    if (window.IntersectionObserver) { io = new IntersectionObserver((es) => { visible = es[es.length - 1].isIntersecting; if (visible) wake(); }); io.observe(el); }
+    const onVis = () => { if (!document.hidden) wake(); }; document.addEventListener('visibilitychange', onVis);
+    fit(); draw(0); publish(); wake();
+
+    const api = {
+      el, setHour, toggle, getHour: () => mod(hour, 24), isNight: () => nightOf(hour) > 0.5, setAutoplay(s) { o.autoplay = Number(s) || 0; wake(); },
+      refreshColors() { renderer = PO.createRenderer(readColors(el)); draw(performance.now() / 1000); }, onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+      destroy() { dead = true; cancelAnimationFrame(raf); el.removeEventListener('pointerdown', down); el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); el.removeEventListener('keydown', key); document.removeEventListener('visibilitychange', onVis); if (ro) ro.disconnect(); if (io) io.disconnect(); if (motionQ.removeEventListener) motionQ.removeEventListener('change', onMotion); canvas.remove(); },
+    };
+    el.__pixelOrbit = api; return api;
+  };
+  PO.mount = mount;
+  const auto = () => document.querySelectorAll('[data-pixel-orbit]').forEach((el) => { if (!el.__pixelOrbit) mount(el); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto, { once: true }); else auto();
+})();
+</script>
+<script>
+  // ---------- 页面胶水代码：只用到组件的公开 API ----------
+  (() => {
+    const el = document.querySelector('.pixel-orbit'); const ring = el.__pixelOrbit;
+    const clock = document.getElementById('clock');
+    const show = (d) => { clock.textContent = d.time + ' · ' + d.label; };
+    ring.onChange(show); const [t0, l0] = el.getAttribute('aria-valuetext').split(' · '); show({ time: t0, label: l0 });
+    document.getElementById('btn-day').onclick = () => ring.setHour(12);
+    document.getElementById('btn-night').onclick = () => ring.setHour(23);
+    const auto = document.getElementById('btn-auto');
+    auto.onclick = () => { const on = auto.getAttribute('aria-pressed') !== 'true'; auto.setAttribute('aria-pressed', on); ring.setAutoplay(on ? 48 : 0); };
+    // 组件还会在元素上触发 'orbitchange' 事件：el.addEventListener('orbitchange', e => console.log(e.detail))
+  })();
+</script>
+
+<script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  const root = document.documentElement;
+  if (params.get('display') === '1') root.classList.add('display-mode');
+  if (params.get('showcase') === '1') root.classList.add('showcase-mode');
+  const setComposition = value => {
+    if (value !== 'art' && value !== 'full') return;
+    root.classList.toggle('showcase-art-mode', value === 'art');
+    root.classList.toggle('showcase-full-mode', value === 'full');
+  };
+  setComposition(params.get('composition') || 'full');
+  if (window.parent === window) return;
+  let painted = false;
+  const announceReady = () => {
+    if (painted) window.parent.postMessage({type:'pixel-orbit-ready',scene:'world'}, '*');
+  };
+  window.addEventListener('message', event => {
+    if (event.source !== window.parent || !event.data) return;
+    if (event.data.type === 'pixel-orbit-composition') setComposition(event.data.composition);
+    if (event.data.type === 'pixel-orbit-ping') announceReady();
+  });
+  const markPainted = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+    painted = true;
+    announceReady();
+  }));
+  if (document.readyState === 'complete') markPainted();
+  else window.addEventListener('load', markPainted, {once:true});
+})();
+</script>
+</body>
+</html>

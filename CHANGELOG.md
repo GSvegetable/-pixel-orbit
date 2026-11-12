@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.0 — 2026-11-13
+
+### Added
+- 将新增的环形世界效果独立保存为 `pixel-orbit-world.html`，不再覆盖田园版主编辑器。
+- `showcase.html` 和公开试玩页支持田园、星球、环形世界三种效果。
+
+### Fixed
+- 从覆盖提交之前的稳定提交恢复完整的 `pixel-orbit.html`，保留参数实验室、展示模式、父子页面通信和原有功能。
+- 为第三种效果补齐 display / showcase 模式及 iframe ready、构图消息协议。
+
 Pixel Orbit 的独立项目版本记录。网站作品集中的嵌入展示与详情面板版本记录，另见 [gongshui-pages](https://github.com/GSvegetable/gongshui-pages)。
 
 ## v1.1.0 — 2026-11-12

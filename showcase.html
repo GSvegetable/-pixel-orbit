@@ -15,9 +15,10 @@ iframe{display:block;width:100%;height:100%;border:0;background:transparent}
 <iframe id="orbit-artwork" title="Pixel Orbit circular artwork" allow="fullscreen"></iframe>
 <script>
   const params = new URLSearchParams(location.search);
-  const scene = params.get("scene") === "planet" ? "planet" : "countryside";
+  const requestedScene = params.get("scene");
+  const scene = ["countryside", "planet", "world"].includes(requestedScene) ? requestedScene : "countryside";
   const composition = params.get("composition") === "art" ? "art" : "full";
-  const page = scene === "planet" ? "pixel-orbit-planet.html" : "pixel-orbit.html";
+  const page = scene === "planet" ? "pixel-orbit-planet.html" : scene === "world" ? "pixel-orbit-world.html" : "pixel-orbit.html";
   const artwork = document.getElementById("orbit-artwork");
   let activeComposition = composition;
   let artworkReady = false;

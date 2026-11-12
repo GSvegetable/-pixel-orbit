@@ -22,13 +22,14 @@ iframe{display:block;width:100%;height:100%;border:0;background:#101326}
 <nav aria-label="选择 Pixel Orbit 场景">
 <button type="button" data-scene="countryside" aria-pressed="true">田园</button>
 <button type="button" data-scene="planet" aria-pressed="false">星球</button>
+<button type="button" data-scene="world" aria-pressed="false">环形世界</button>
 </nav>
 <iframe id="scene" title="Pixel Orbit interactive scene" src="./pixel-orbit.html?display=1"></iframe>
 <script>
 (() => {
  const frame=document.getElementById('scene');
  const buttons=[...document.querySelectorAll('[data-scene]')];
- const sources={countryside:'./pixel-orbit.html?display=1',planet:'./pixel-orbit-planet.html?display=1'};
+ const sources={countryside:'./pixel-orbit.html?display=1',planet:'./pixel-orbit-planet.html?display=1',world:'./pixel-orbit-world.html?display=1'};
  buttons.forEach(button=>button.addEventListener('click',()=>{
    const scene=button.dataset.scene;
    if(frame.getAttribute('src')!==sources[scene])frame.src=sources[scene];

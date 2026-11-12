@@ -4,8 +4,9 @@ This project is intentionally a small, dependency-free browser experience. It is
 
 ## Runtime map
 
-- `play.html` is the public-facing player: it contains only two scene choices (countryside / planet) and loads the selected scene in a clean, control-free presentation mode.
+- `play.html` is the public-facing player: it offers three scene choices (countryside / planet / ring world) and loads the selected scene in a clean, control-free presentation mode.
 - `pixel-orbit.html` is the countryside parameter editor. It contains the pixel renderer, interactive orbit component, full control panel, localization and page controller.
+- `pixel-orbit-world.html` is the third independent ring-world visual edition, with its own 168 × 168 renderer and lightweight day/night controls. It supports clean display mode and the portfolio showcase readiness/composition message contract.
 - `pixel-orbit-planet.html` is an independent alternate visual direction: a pixel-art globe with procedural terrain, clouds, day/night lighting, orbiting sun/moon and a deliberately compact control surface.
 - `index.html` is the GitHub Pages root entry. It redirects to the main experience and includes a normal anchor fallback.
 - `lab.html` is the parameter laboratory. Its scene selector switches between the full countryside and planet editors; it also documents CSS theme tokens and public instance methods.
@@ -34,7 +35,7 @@ Call `destroy()` before removing a mounted element permanently. A destroyed elem
 ## Visual and interaction principles
 
 - Keep the 152 × 152 pixel renderer and its palette pipeline independent from surrounding page controls.
-- Treat the countryside and planet pages as two supported visual editions; do not overwrite one with the other or silently remove the primary page controls when iterating on the planet edition.
+- Treat the countryside, planet and ring-world pages as three supported visual editions; do not overwrite one with the other or silently remove the primary page controls when iterating on the planet edition.
 - Keep pointer cancellation distinct from a completed click; a cancelled drag must not unexpectedly toggle the scene.
 - Preserve keyboard operation, visible focus, accessible names and reduced-motion behavior.
 - Keep time, palette, language and clock-format controls synchronized with their displayed state.

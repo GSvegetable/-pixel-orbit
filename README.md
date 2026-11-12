@@ -1,6 +1,6 @@
 # Pixel Orbit
 
-**Current project version: v1.1.0** · Updated 2026-11-12
+**Current project version: v1.2.0** · Updated 2026-11-13
 
 [![Quality checks](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml/badge.svg)](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
 
@@ -21,18 +21,22 @@
 **Online demo:** https://gsvegetable.github.io/-pixel-orbit/play.html  
 **Lab:** https://gsvegetable.github.io/-pixel-orbit/lab.html
 
-**Quick navigation:** [主体验 · 田园版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html) · [第二视觉 · 星球版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html) · [参数实验室](https://gsvegetable.github.io/-pixel-orbit/lab.html) · [开发说明](./docs/DEVELOPMENT.md) · [更新日志](./CHANGELOG.md) · [自动化检查](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
+**Quick navigation:** [主体验 · 田园版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html) · [第二视觉 · 星球版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html) · [第三视觉 · 环形世界版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-world.html) · [参数实验室](https://gsvegetable.github.io/-pixel-orbit/lab.html) · [开发说明](./docs/DEVELOPMENT.md) · [更新日志](./CHANGELOG.md) · [自动化检查](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
 
 ---
 
-## Latest release · v1.1.0
+## Latest release · v1.2.0
+
+- Adds the uploaded ring-world visual as an independent `pixel-orbit-world.html` edition without replacing the full countryside editor.
+- Extends the showcase bridge and public player to three scenes: countryside, planet and ring world.
+- Restores the complete countryside editor from the commit immediately before the accidental overwrite.
 
 This release adds a host-friendly showcase mode for the portfolio site:
 
-- `showcase.html` selects the countryside or planet scene using `?scene=countryside|planet`.
+- `showcase.html` selects countryside, planet or ring world using `?scene=countryside|planet|world`.
 - `?composition=art` renders the enlarged, intentionally cropped portfolio preview; `?composition=full` renders the complete artwork for the expanded detail view.
 - The showcase frame relays `pixel-orbit-composition` messages from the parent page to the active artwork frame, so the host can animate between compositions without navigating/reloading the scene.
-- Both scene pages keep their canvas dimensions stable and animate the artwork with CSS transforms.
+- All three scene pages keep their canvas dimensions stable and animate the artwork with CSS transforms.
 - The parent portfolio site preloads the alternate scene and crossfades between frames. The site-level implementation is documented in [gongshui-pages](https://github.com/GSvegetable/gongshui-pages).
 
 **Versioning:** Pixel Orbit uses semantic versions. Showcase integration and other backward-compatible feature additions increment MINOR; compatible fixes increment PATCH; breaking API or file-structure changes increment MAJOR. See [CHANGELOG.md](./CHANGELOG.md) for the release history.
@@ -41,13 +45,14 @@ This release adds a host-friendly showcase mode for the portfolio site:
 
 ## 中文说明
 
-Pixel Orbit 是一个无需依赖、无需构建步骤的像素昼夜互动作品，现提供两种独立视觉版本：主版本以田园小屋为核心，星球版以球面地形和昼夜轨道为核心。拖动圆环或调整时间，可以观察光照与场景随一天变化。
+Pixel Orbit 是一个无需依赖、无需构建步骤的像素昼夜互动作品，现提供三种独立视觉版本：田园版以小屋为核心，星球版以球面地形和昼夜轨道为核心，环形世界版采用独立的 168×168 像素渲染与昼夜旋钮。拖动圆环或调整时间，可以观察光照与场景随一天变化。
 
 ### 体验入口
 
-- **[在线试玩](https://gsvegetable.github.io/-pixel-orbit/play.html)**：只保留田园 / 星球两个场景切换，点击画面即可体验昼夜变化。
+- **[在线试玩](https://gsvegetable.github.io/-pixel-orbit/play.html)**：提供田园 / 星球 / 环形世界三种视觉效果切换，点击画面即可体验昼夜变化。
 - **[实验室 / 参数说明](https://gsvegetable.github.io/-pixel-orbit/lab.html)**：查看控制方式、可调参数与开发接口。
-- **[星球版 · 第二种视觉效果](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html)**：球面地形、云层、昼夜光照与太阳/月亮轨道的另一种演绎。
+- **[星球版 · 第二种视觉效果](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html)**：球面地形、云层、昼夜光照与太阳/月亮轨道。
+- **[环形世界版 · 第三种视觉效果](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-world.html)**：独立的环形世界渲染、昼夜切换与拖动交互。
 - **[网站首页](https://gsvegetable.github.io/-pixel-orbit/)**：打开 Pixel Orbit 主体验。
 
 ### 功能
@@ -164,7 +169,7 @@ Pixel Orbit は、時刻に合わせて景色が変化する、依存ライブ�
 
 ### 体験する
 
-- **[オンラインで遊ぶ](https://gsvegetable.github.io/-pixel-orbit/play.html)** — 田園と惑星の 2 つのシーンを切り替えて楽しめます。
+- **[オンラインで遊ぶ](https://gsvegetable.github.io/-pixel-orbit/play.html)** — 田園・惑星・リングワールドの 3 つのシーンを切り替えて楽しめます。
 - **[ラボ / 設定ガイド](https://gsvegetable.github.io/-pixel-orbit/lab.html)** — 操作方法、調整できる項目、開発者向け API を確認できます。
 - **[惑星版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html)** — 球面地形、雲、昼夜の光を使った別のビジュアルです。
 - **[ホスト版デモ](https://gsvegetable.github.io/-pixel-orbit/)** — メイン体験を開きます。
@@ -215,6 +220,7 @@ Pixel Orbit は、時刻に合わせて景色が変化する、依存ライブ�
 ├── tests/smoke.mjs                # Dependency-free syntax and feature checks
 ├── pixel-orbit.html               # Main countryside experience and renderer
 ├── pixel-orbit-planet.html        # Alternate pixel-planet visual experience
+├── pixel-orbit-world.html         # Third ring-world visual experience
 ├── lab.html                       # Live playground and developer reference
 ├── index.html                     # GitHub Pages entry point
 ├── docs/DEVELOPMENT.md            # Architecture, lifecycle and test notes
