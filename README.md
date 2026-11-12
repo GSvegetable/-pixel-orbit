@@ -6,7 +6,7 @@
 > A tiny pixel-art world that moves with the time of day. / 一座随时间流动的像素小世界。
 
 <p align="center">
-  <a href="https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html"><strong>▶ Play Pixel Orbit</strong></a>
+  <a href="https://gsvegetable.github.io/-pixel-orbit/play.html"><strong>▶ Play Pixel Orbit</strong></a>
   ·
   <a href="https://gsvegetable.github.io/-pixel-orbit/lab.html"><strong>⚙ Open the Lab</strong></a>
   ·
@@ -17,7 +17,7 @@
   <a href="#日本語">日本語</a>
 </p>
 
-**Online demo:** https://gsvegetable.github.io/-pixel-orbit/  
+**Online demo:** https://gsvegetable.github.io/-pixel-orbit/play.html  
 **Lab:** https://gsvegetable.github.io/-pixel-orbit/lab.html
 
 **Quick navigation:** [主体验 · 田园版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html) · [第二视觉 · 星球版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html) · [参数实验室](https://gsvegetable.github.io/-pixel-orbit/lab.html) · [开发说明](./docs/DEVELOPMENT.md) · [更新日志](./CHANGELOG.md) · [自动化检查](https://github.com/GSvegetable/-pixel-orbit/actions/workflows/quality.yml)
@@ -30,7 +30,7 @@ Pixel Orbit 是一个无需依赖、无需构建步骤的像素昼夜互动作�
 
 ### 体验入口
 
-- **[在线试玩](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html)**：直接打开完整互动页面。
+- **[在线试玩](https://gsvegetable.github.io/-pixel-orbit/play.html)**：只保留田园 / 星球两个场景切换，点击画面即可体验昼夜变化。
 - **[实验室 / 参数说明](https://gsvegetable.github.io/-pixel-orbit/lab.html)**：查看控制方式、可调参数与开发接口。
 - **[星球版 · 第二种视觉效果](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html)**：球面地形、云层、昼夜光照与太阳/月亮轨道的另一种演绎。
 - **[网站首页](https://gsvegetable.github.io/-pixel-orbit/)**：打开 Pixel Orbit 主体验。
@@ -100,7 +100,7 @@ Pixel Orbit is a dependency-free pixel-art day/night experience. Move through a 
 
 ### Try it
 
-- **[Play the experience](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html)** — open the interactive scene.
+- **[Play the experience](https://gsvegetable.github.io/-pixel-orbit/play.html)** — switch between the countryside and planet scenes.
 - **[Open the Lab](https://gsvegetable.github.io/-pixel-orbit/lab.html)** — explore controls, tunable settings and the developer API.
 - **[Planet variant](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html)** — an alternate globe, clouds and orbital day/night treatment.
 - **[Hosted demo](https://gsvegetable.github.io/-pixel-orbit/)** — open the main experience.
@@ -149,7 +149,7 @@ Pixel Orbit は、時刻に合わせて景色が変化する、依存ライブ�
 
 ### 体験する
 
-- **[オンラインで遊ぶ](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit.html)** — メインのインタラクティブ画面を開きます。
+- **[オンラインで遊ぶ](https://gsvegetable.github.io/-pixel-orbit/play.html)** — 田園と惑星の 2 つのシーンを切り替えて楽しめます。
 - **[ラボ / 設定ガイド](https://gsvegetable.github.io/-pixel-orbit/lab.html)** — 操作方法、調整できる項目、開発者向け API を確認できます。
 - **[惑星版](https://gsvegetable.github.io/-pixel-orbit/pixel-orbit-planet.html)** — 球面地形、雲、昼夜の光を使った別のビジュアルです。
 - **[ホスト版デモ](https://gsvegetable.github.io/-pixel-orbit/)** — メイン体験を開きます。
