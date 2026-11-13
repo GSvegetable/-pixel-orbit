@@ -162,21 +162,22 @@ html.showcase-mode main {
   margin:0; padding:0; overflow:hidden;
 }
 html.showcase-mode .pixel-orbit {
-  /* Center with auto margins; reserve transform for vertical motion and scale. */
+  /* Center with auto margins. `top` stays fixed; ONLY transform animates (compositor-only),
+     so there is no layout-vs-compositor desync (that desync was the high-frequency jitter). */
   position:absolute;
   left:0; right:0; top:50%;
   width:min(92vmin,560px);
   margin:0 auto;
   transform-origin:top center;
-  transform:translateY(-50%) scale(1);
-  transition:top 620ms cubic-bezier(.22,.8,.2,1),transform 620ms cubic-bezier(.22,.8,.2,1);
-  will-change:transform,top;
+  transform:translate3d(0,-50%,0) scale(1);
+  transition:transform 620ms cubic-bezier(.22,.8,.2,1);
+  will-change:transform;
 }
 html.showcase-art-mode .pixel-orbit {
-  /* Home preview: horizontally centered, deliberately lower, with clear headroom. */
-  top:20vh;
-  transform-origin:top center;
-  transform:scale(1.36);
+  /* Home preview: horizontally centered, deliberately lower, with clear headroom.
+     -30vh from the 50% anchor puts the top edge at 20vh (same geometry as before),
+     and the transform function list matches the full state so interpolation is exact. */
+  transform:translate3d(0,-30vh,0) scale(1.36);
 }
 @media(prefers-reduced-motion:reduce) {
   html.showcase-mode .pixel-orbit { transition-duration:.01ms; }
@@ -188,7 +189,7 @@ html.showcase-art-mode .pixel-orbit {
   <h1>Pixel Orbit</h1>
   <!-- data-hour: "now"（本地时间）或 0–24；data-sync="root" 会把 --night 写到 <html>，让整个页面跟着变；data-autoplay="60" 表示 60 秒转一天 -->
   <div class="pixel-orbit" data-pixel-orbit data-hour="now" data-sync="root" aria-label="昼夜轨道开关"></div>
-  <output id="clock" aria-live="off"></output>
+  <output id="clock" aria-live="off"></o>
   <div class="row">
     <button type="button" id="btn-day"><span>☀ 白天</span></button>
     <button type="button" id="btn-night"><span>☾ 夜晚</span></button>
@@ -461,7 +462,6 @@ html.showcase-art-mode .pixel-orbit {
       glowCtx.fillStyle = glow;
       glowCtx.fillRect(0, 0, N * 2, N * 2);
       u32.set(renderer.render(hour, t, { calm }));
-      u32.set(renderer.render(hour, t, { calm }));
       /* Keep the scene inside the circular orbit, but discard the square canvas corners.
          This preserves the live day/night artwork while allowing the outer halo to show. */
       const cx = N / 2, cy = N / 2, radius = 77, feather = 2.5, spill = 22;
@@ -497,7 +497,9 @@ html.showcase-art-mode .pixel-orbit {
       if (realTimeSync) { const now = new Date(); hour = target = now.getHours() + now.getMinutes() / 60 + (now.getSeconds() + now.getMilliseconds() / 1000) / 3600; }
       else if (o.autoplay > 0 && !drag) { target += (dt * 24) / o.autoplay; hour = target; }
       else { const d = target - hour; if (calm || Math.abs(d) < 0.0006) hour = target; else hour += d * (1 - Math.exp(-rate * dt)); }
-      const moving = realTimeSync || Math.abs(target - hour) > 0.0006 || o.autoplay > 0 || !!drag;
+      // 实时时间（showcase 默认）一小时才走一小时，不需要每帧重绘；
+      // 空闲时走下面 33ms 的节流（约 30fps），把主线程让给 transform 动画。
+      const moving = Math.abs(target - hour) > 0.0006 || o.autoplay > 0 || !!drag;
       if (moving || ts - lastDraw > 33) { draw(ts / 1000); lastDraw = ts; publish(); }
       if (visible && !document.hidden && (!calm || moving)) raf = requestAnimationFrame(frame);
     };
