@@ -5,10 +5,10 @@
      ---------------------------------------------------------
      两行写法（容器自己指定）：
        <div data-pixel-orbit-embed></div>
-       <script src="https://gsvegetable.github.io/-pixel-orbit/embed.js" data-scene="planet"></script>
+       <script src="https://gsvegetable.github.io/2_pixel-dusk/embed.js" data-scene="planet"></script>
 
      只有一行也行（作品会插在脚本前面）：
-       <script src="https://gsvegetable.github.io/-pixel-orbit/embed.js"></script>
+       <script src="https://gsvegetable.github.io/2_pixel-dusk/embed.js"></script>
 
      可选参数（写在 script 标签上）：
        data-scene        countryside | planet | world   默认 planet
@@ -19,7 +19,7 @@
      和像素昼夜开关的 embed.js 一样：样式只作用在自己的类上，
      不会污染宿主网页的 body / main。 */
 
-  var BASE = 'https://gsvegetable.github.io/-pixel-orbit/';
+  var BASE = 'https://gsvegetable.github.io/2_pixel-dusk/';
   // showcase.html 改了就把这个版本号往上加一位；作品页自己的版本由 showcase.html 取 ETag 决定
   var SHOWCASE_VERSION = '1.2.3';
   var SCENES = ['countryside', 'planet', 'world'];
